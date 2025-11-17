@@ -29,11 +29,13 @@ export async function searchRoutes(
       body: JSON.stringify({ start, goal }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error("Failed to fetch routes");
+      const errorMessage = data.error || "Failed to fetch routes";
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json();
     return data.routes || [];
   } catch (error) {
     console.error("Error fetching routes:", error);

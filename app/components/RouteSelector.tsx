@@ -37,7 +37,7 @@ export default function RouteSelector({
     } catch (err: any) {
       const errorMessage = err?.message || "Unknown error";
       if (errorMessage.includes("credentials") || errorMessage.includes("not configured")) {
-        setError("Naver Map API 인증 정보가 설정되지 않았습니다. .env.local 파일에 NEXT_PUBLIC_NAVER_CLIENT_ID와 NEXT_PUBLIC_NAVER_CLIENT_SECRET을 추가해주세요. 현재는 테스트용 모의 데이터를 사용합니다. (Naver Map API credentials not configured. Please add NEXT_PUBLIC_NAVER_CLIENT_ID and NEXT_PUBLIC_NAVER_CLIENT_SECRET to your .env.local file. For now, using mock data for testing.)");
+        setError("Naver Map API 인증 정보가 설정되지 않았습니다. .env.local 파일에 NAVER_CLIENT_ID와 NAVER_CLIENT_SECRET을 추가해주세요. (Naver Map API credentials not configured. Please add NAVER_CLIENT_ID and NAVER_CLIENT_SECRET to your .env.local file.)");
         // Use mock data for development/testing
         setRoutes([
           {
@@ -60,7 +60,7 @@ export default function RouteSelector({
           },
         ]);
       } else {
-        setError(`Failed to fetch routes: ${errorMessage}`);
+        setError(errorMessage);
       }
       console.error(err);
     } finally {
