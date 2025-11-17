@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { formatBilingualError } from "../../lib/textUtils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,6 +8,16 @@ export async function POST(request: NextRequest) {
     if (!start || !goal) {
       return NextResponse.json(
         { error: "Start and goal are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if start and goal are the same
+    if (start.trim() === goal.trim()) {
+      return NextResponse.json(
+        { 
+          error: formatBilingualError("출발지와 도착지가 같습니다. 다른 위치를 입력해주세요. (Departure and destination are the same. Please enter different locations.)")
+        },
         { status: 400 }
       );
     }
@@ -134,7 +145,7 @@ export async function POST(request: NextRequest) {
     if (!isStartCoord && !coordPattern.test(startCoord)) {
       return NextResponse.json(
         { 
-          error: `출발지 "${start}"를 찾을 수 없습니다. 더 구체적인 주소를 입력해주세요. (Could not find departure location "${start}". Please enter a more specific address.)`
+          error: formatBilingualError(`출발지 "${start}"를 찾을 수 없습니다. 더 구체적인 주소를 입력해주세요. (Could not find departure location "${start}". Please enter a more specific address.)`)
         },
         { status: 400 }
       );
@@ -143,7 +154,7 @@ export async function POST(request: NextRequest) {
     if (!isGoalCoord && !coordPattern.test(goalCoord)) {
       return NextResponse.json(
         { 
-          error: `도착지 "${goal}"를 찾을 수 없습니다. 더 구체적인 주소를 입력해주세요. (Could not find destination location "${goal}". Please enter a more specific address.)`
+          error: formatBilingualError(`도착지 "${goal}"를 찾을 수 없습니다. 더 구체적인 주소를 입력해주세요. (Could not find destination location "${goal}". Please enter a more specific address.)`)
         },
         { status: 400 }
       );
@@ -293,9 +304,10 @@ export async function POST(request: NextRequest) {
     
     if (hasSubscriptionError) {
       const errorDetails = routeResults.find((r: any) => r?.__subscriptionError)?.errorDetails;
+      const errorText = "Naver Directions API 접근 권한이 없습니다. 다음을 확인해주세요:\n1. Naver Cloud Platform 콘솔에서 Directions API가 구독되어 있는지 확인\n2. 사용 중인 API 키(Client ID/Secret)가 Directions API를 구독한 Application에 속해 있는지 확인\n3. API 키가 올바르게 설정되었는지 확인\n\n(Naver Directions API access denied. Please check:\n1. Directions API is subscribed in Naver Cloud Platform console\n2. The API keys (Client ID/Secret) belong to an Application that has subscribed to Directions API\n3. API keys are correctly configured)";
       return NextResponse.json(
         { 
-          error: "Naver Directions API 접근 권한이 없습니다. 다음을 확인해주세요:\n1. Naver Cloud Platform 콘솔에서 Directions API가 구독되어 있는지 확인\n2. 사용 중인 API 키(Client ID/Secret)가 Directions API를 구독한 Application에 속해 있는지 확인\n3. API 키가 올바르게 설정되었는지 확인\n\n(Naver Directions API access denied. Please check:\n1. Directions API is subscribed in Naver Cloud Platform console\n2. The API keys (Client ID/Secret) belong to an Application that has subscribed to Directions API\n3. API keys are correctly configured)",
+          error: formatBilingualError(errorText),
           errorCode: errorDetails?.errorCode,
           errorMessage: errorDetails?.message
         },
@@ -323,7 +335,7 @@ export async function POST(request: NextRequest) {
 
     if (routes.length === 0) {
       return NextResponse.json(
-        { error: "경로를 찾을 수 없습니다. 출발지와 도착지를 확인해주세요." },
+        { error: formatBilingualError("경로를 찾을 수 없습니다. 출발지와 도착지를 확인해주세요. (No routes found. Please check your departure and destination locations.)") },
         { status: 404 }
       );
     }

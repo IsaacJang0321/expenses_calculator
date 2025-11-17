@@ -13,6 +13,7 @@ import {
 } from "./lib/calculations";
 import { getFuelPrices, getFuelPriceByType } from "./lib/fuelPrice";
 import { RouteOption } from "./lib/naverMap";
+import { formatBilingualText } from "./lib/textUtils";
 
 const CACHE_KEY = "trip_expenses_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -107,10 +108,10 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            경비 계산기
+            {formatBilingualText("경비 계산기 (Trip Expenses Calculator)")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            경로와 차량 정보로 출장비를 계산하세요
+            {formatBilingualText("경로와 차량 정보로 출장비를 계산하세요 (Calculate trip expenses with route and vehicle information)")}
           </p>
         </div>
 

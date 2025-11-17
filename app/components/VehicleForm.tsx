@@ -9,6 +9,7 @@ import {
   VehicleInfo,
 } from "../lib/vehicleData";
 import { getFuelPrices, getFuelPriceByType } from "../lib/fuelPrice";
+import { formatBilingualText } from "../lib/textUtils";
 
 interface VehicleFormProps {
   onVehicleChange: (vehicle: {
@@ -109,20 +110,20 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
     <div className="w-full max-w-2xl mx-auto">
       <div className="bg-gray-50 dark:bg-[#2d2d2d] rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-          차량 정보 (Vehicle Details)
+          {formatBilingualText("차량 정보 (Vehicle Details)")}
         </h2>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              브랜드 (Brand)
+              {formatBilingualText("브랜드 (Brand)")}
             </label>
             <select
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100"
             >
-              <option value="">브랜드 선택 (Select brand)</option>
+              <option value="">{formatBilingualText("브랜드 선택 (Select brand)")}</option>
               {brands.map((b) => (
                 <option key={b} value={b}>
                   {b}
@@ -133,7 +134,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              모델 (Model)
+              {formatBilingualText("모델 (Model)")}
             </label>
             <select
               value={model}
@@ -141,7 +142,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
               disabled={!brand}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">모델 선택 (Select model)</option>
+              <option value="">{formatBilingualText("모델 선택 (Select model)")}</option>
               {models.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -153,7 +154,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
           {hasMultipleVariants && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                연료 타입 변형 (Fuel Type Variant)
+                {formatBilingualText("연료 타입 변형 (Fuel Type Variant)")}
               </label>
               <select
                 value={selectedVariantIndex}
@@ -171,8 +172,8 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
                   };
                   const fuelTypeName = fuelTypeNames[variant.fuelType] || variant.fuelType;
                   const label = isHybrid
-                    ? `${fuelTypeName} 하이브리드 (${variant.fuelType} Hybrid - ${variant.efficiency} km/L)`
-                    : `${fuelTypeName} (${variant.fuelType} - ${variant.efficiency} km/L)`;
+                    ? formatBilingualText(`${fuelTypeName} 하이브리드 (${variant.fuelType} Hybrid - ${variant.efficiency} km/L)`)
+                    : formatBilingualText(`${fuelTypeName} (${variant.fuelType} - ${variant.efficiency} km/L)`);
                   return (
                     <option key={index} value={index}>
                       {label}
@@ -188,7 +189,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    연료 타입 (Fuel Type)
+                    {formatBilingualText("연료 타입 (Fuel Type)")}
                   </div>
                   <div className="font-semibold text-gray-900 dark:text-gray-100">
                     {vehicleInfo.fuelType === "gasoline"
@@ -212,7 +213,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
                 </div>
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    연비 (Fuel Efficiency)
+                    {formatBilingualText("연비 (Fuel Efficiency)")}
                   </div>
                   <div className="font-semibold text-gray-900 dark:text-gray-100">
                     {vehicleInfo.efficiency} km/L
@@ -223,7 +224,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
               {currentFuelPrice !== null && vehicleInfo.fuelType !== "electric" && (
                 <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    오늘의 연료 가격 (Today's Fuel Price)
+                    {formatBilingualText("오늘의 연료 가격 (Today's Fuel Price)")}
                   </div>
                   <div className="font-semibold text-lg text-blue-600 dark:text-blue-400">
                     ₩{currentFuelPrice.toLocaleString()}/L ({vehicleInfo.fuelType})
@@ -234,10 +235,10 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
               {vehicleInfo.fuelType === "electric" && (
                 <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    전기차 (Electric Vehicle)
+                    {formatBilingualText("전기차 (Electric Vehicle)")}
                   </div>
                   <div className="font-semibold text-lg text-blue-600 dark:text-blue-400">
-                    ~₩30/km (추정) (estimated)
+                    {formatBilingualText("~₩30/km (추정) (estimated)")}
                   </div>
                 </div>
               )}
@@ -247,11 +248,11 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
           {fuelPrices && !vehicleInfo && (
             <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                오늘의 연료 가격 (Today's Fuel Prices)
+                {formatBilingualText("오늘의 연료 가격 (Today's Fuel Prices)")}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <div>휘발유 (Gasoline): ₩{fuelPrices.gasoline.toLocaleString()}/L</div>
-                <div>경유 (Diesel): ₩{fuelPrices.diesel.toLocaleString()}/L</div>
+                <div>{formatBilingualText("휘발유 (Gasoline)")}: ₩{fuelPrices.gasoline.toLocaleString()}/L</div>
+                <div>{formatBilingualText("경유 (Diesel)")}: ₩{fuelPrices.diesel.toLocaleString()}/L</div>
                 <div>LPG: ₩{fuelPrices.lpg.toLocaleString()}/L</div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatBilingualText } from "../lib/textUtils";
 
 interface AdditionalExpensesProps {
   onExpensesChange: (expenses: {
@@ -46,7 +47,7 @@ export default function AdditionalExpenses({
     <div className="w-full max-w-2xl mx-auto">
       <div className="bg-gray-50 dark:bg-[#2d2d2d] rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-          추가 비용 (Additional Expenses)
+          {formatBilingualText("추가 비용 (Additional Expenses)")}
         </h2>
 
         <div className="space-y-4">
@@ -75,7 +76,7 @@ export default function AdditionalExpenses({
                 htmlFor={key}
                 className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
               >
-                {label} ({labelEn})
+                {formatBilingualText(`${label} (${labelEn})`)}
               </label>
               {expenses[key].enabled && (
                 <div className="flex items-center gap-2">
