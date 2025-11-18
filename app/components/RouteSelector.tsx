@@ -18,8 +18,8 @@ export default function RouteSelector({
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useNaverMap, setUseNaverMap] = useState(false);
-  const [useAddressInput, setUseAddressInput] = useState(true);
+  const [useNaverMap, setUseNaverMap] = useState(true);
+  const [useAddressInput, setUseAddressInput] = useState(false);
   const [manualDistance, setManualDistance] = useState("");
   const [manualTollFee, setManualTollFee] = useState("");
   const [manualDuration, setManualDuration] = useState("");
@@ -162,31 +162,31 @@ export default function RouteSelector({
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="address-input"
-                checked={useAddressInput}
-                onChange={(e) => handleAddressInputChange(e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-[#1f1f1f] dark:border-gray-600"
-              />
-              <label
-                htmlFor="address-input"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
-              >
-                {formatBilingualText("직접 주소로 입력 (Enter address directly)")}
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
                 id="naver-map"
                 checked={useNaverMap}
                 onChange={(e) => handleNaverMapChange(e.target.checked)}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-[#1f1f1f] dark:border-gray-600"
+                className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500 dark:bg-[#1f1f1f] dark:border-gray-600 accent-green-500"
               />
               <label
                 htmlFor="naver-map"
                 className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
               >
-                {formatBilingualText("네이버 지도로 검색 (Search with Naver Map)")}
+                {formatBilingualText("지도로 검색 (Search with Map)")}
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="address-input"
+                checked={useAddressInput}
+                onChange={(e) => handleAddressInputChange(e.target.checked)}
+                className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500 dark:bg-[#1f1f1f] dark:border-gray-600 accent-green-500"
+              />
+              <label
+                htmlFor="address-input"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+              >
+                {formatBilingualText("주소를 입력 (Enter address directly)")}
               </label>
             </div>
           </div>
@@ -221,6 +221,10 @@ export default function RouteSelector({
                 />
               </div>
 
+              <div className="text-xs text-gray-500 dark:text-gray-400 py-1">
+                {formatBilingualText("네이버 지도 API를 사용합니다. (Data powered by Naver Map API)")}
+              </div>
+
               <button
                 onClick={handleSearch}
                 disabled={loading}
@@ -231,15 +235,37 @@ export default function RouteSelector({
             </>
           ) : (
             <>
-              {/* Naver Map link */}
-              <div className="mb-4">
+              {/* Map links */}
+              <div className="mb-4 flex flex-wrap gap-3">
                 <a
                   href="https://map.naver.com/v5/directions"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
                 >
-                  <span>Naver Maps</span>
+                  <span>네이버 지도</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                    />
+                  </svg>
+                </a>
+                <a
+                  href="https://map.kakao.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
+                >
+                  <span>카카오맵</span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
