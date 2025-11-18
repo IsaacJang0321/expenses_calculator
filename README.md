@@ -18,16 +18,19 @@ A Next.js web application for calculating work trip expenses with route selectio
 npm install
 ```
 
-2. **Optional - For real route data**: Set up Naver Map API credentials:
-   - Copy `.env.local.example` to `.env.local`
-   - Add your Naver Map API credentials:
+2. **Optional - For real route data**: Set up API credentials:
+   - Create `.env.local` file in the root directory
+   - Add your API credentials:
      ```
-     NEXT_PUBLIC_NAVER_CLIENT_ID=your_client_id
-     NEXT_PUBLIC_NAVER_CLIENT_SECRET=your_client_secret
+     NAVER_CLIENT_ID=your_client_id
+     NAVER_CLIENT_SECRET=your_client_secret
+     OPINET_API_KEY=your_opinet_api_key
      ```
-   - Get credentials from [Naver Cloud Platform](https://www.ncloud.com/)
-   - Enable "Directions API" service
-   - **Note**: The app works with mock data if credentials are not set up, so you can test it without API keys!
+   - **Naver Map API**: Get credentials from [Naver Cloud Platform](https://www.ncloud.com/)
+     - Enable "Directions API" service
+   - **OPINET API**: Get API key from [OPINET](https://www.opinet.co.kr/)
+     - Register at OPINET and get your API key
+   - **Note**: The app works with mock/default data if credentials are not set up, so you can test it without API keys!
 
 3. Run the development server:
 ```bash
@@ -53,5 +56,5 @@ npm run dev
 
 ## Notes
 
-- Fuel prices are currently using mock data. Replace with actual Korean fuel price API in `app/lib/fuelPrice.ts`
+- Fuel prices are fetched from OPINET API in real-time. Set `OPINET_API_KEY` in `.env.local` to use actual prices.
 - Vehicle data includes common Korean vehicles. You can extend the list in `app/lib/vehicleData.ts`

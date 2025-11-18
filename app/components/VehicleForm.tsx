@@ -30,6 +30,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
   const [fuelPrices, setFuelPrices] = useState<{
     gasoline: number;
+    premiumGasoline: number | null;
     diesel: number;
     lpg: number;
   } | null>(null);
@@ -44,6 +45,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
     getFuelPrices().then((prices) => {
       setFuelPrices({
         gasoline: prices.gasoline,
+        premiumGasoline: prices.premiumGasoline,
         diesel: prices.diesel,
         lpg: prices.lpg,
       });
@@ -100,6 +102,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
   const currentFuelPrice = vehicleInfo && fuelPrices
     ? getFuelPriceByType(vehicleInfo.fuelType, {
         gasoline: fuelPrices.gasoline,
+        premiumGasoline: fuelPrices.premiumGasoline,
         diesel: fuelPrices.diesel,
         lpg: fuelPrices.lpg,
         timestamp: Date.now(),
@@ -248,10 +251,16 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
           {fuelPrices && !vehicleInfo && (
             <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {formatBilingualText("오늘의 연료 가격 (Today's Fuel Prices)")}
+                {"오늘의 연료 가격"}
+                <small className="text-xs text-gray-500 dark:text-gray-400 py-1">
+                {" from OPINET"}
+                </small>
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <div>{formatBilingualText("휘발유 (Gasoline)")}: ₩{fuelPrices.gasoline.toLocaleString()}/L</div>
+                {fuelPrices.premiumGasoline && (
+                  <div>{formatBilingualText("고급휘발유 (Premium Gasoline)")}: ₩{fuelPrices.premiumGasoline.toLocaleString()}/L</div>
+                )}
                 <div>{formatBilingualText("경유 (Diesel)")}: ₩{fuelPrices.diesel.toLocaleString()}/L</div>
                 <div>LPG: ₩{fuelPrices.lpg.toLocaleString()}/L</div>
               </div>

@@ -1,8 +1,9 @@
 // Korean fuel price API integration
-// Using a mock API structure - replace with actual Korean fuel price API
+// Using OPINET API for real-time fuel prices
 
 export interface FuelPrices {
   gasoline: number;
+  premiumGasoline: number | null; // 고급휘발유 (B034)
   diesel: number;
   lpg: number;
   timestamp: number;
@@ -12,8 +13,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 let cachedPrices: FuelPrices | null = null;
 
-// Mock fuel prices - replace with actual API call
-// For production, use Korean fuel price API like Opinet API
+// Fetch fuel prices from OPINET API
 export async function getFuelPrices(): Promise<FuelPrices> {
   // Check cache first
   if (cachedPrices) {
@@ -24,27 +24,34 @@ export async function getFuelPrices(): Promise<FuelPrices> {
   }
 
   try {
-    // TODO: Replace with actual Korean fuel price API
-    // Example: Opinet API or similar service
-    // For now, using mock data with realistic Korean fuel prices
-    const mockPrices: FuelPrices = {
-      gasoline: 1850, // ₩/L
-      diesel: 1650, // ₩/L
-      lpg: 950, // ₩/L
-      timestamp: Date.now(),
-    };
+    // Call our API route which fetches from OPINET
+    const response = await fetch("/api/fuel-prices", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
 
-    cachedPrices = mockPrices;
-    return mockPrices;
+    if (!response.ok) {
+      throw new Error(`Failed to fetch fuel prices: ${response.status}`);
+    }
+
+    const prices: FuelPrices = await response.json();
+    
+    cachedPrices = prices;
+    return prices;
   } catch (error) {
     console.error("Failed to fetch fuel prices:", error);
     // Return default prices if API fails
-    return {
+    const defaultPrices: FuelPrices = {
       gasoline: 1850,
+      premiumGasoline: null,
       diesel: 1650,
       lpg: 950,
       timestamp: Date.now(),
     };
+    return defaultPrices;
   }
 }
 
