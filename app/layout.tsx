@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "경비 계산기 (Trip Expenses Calculator)",
+  title: "경비 계산기",
 };
 
 export default function RootLayout({
