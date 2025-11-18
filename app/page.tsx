@@ -176,11 +176,11 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-        <small>© 2025 Isaac — 경비 계산기</small>
-        <div>
-          <a href="https://github.com/your-repo">Click here to see the GitHub</a>
-        </div>
+        <small>© 2025 Isaac — 경비 계산기</small> <br />
         <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
+        <div>
+          <a target="_blank" href="https://github.com/IsaacJang0321/expenses_calculator">Click here to see the GitHub repository</a>
+        </div>
         </div>
       </div>
     </main>
