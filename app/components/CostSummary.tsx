@@ -7,6 +7,14 @@ interface CostSummaryProps {
   breakdown: CostBreakdown;
 }
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}년 ${month}월 ${day}일`;
+}
+
 export default function CostSummary({ breakdown }: CostSummaryProps) {
   const hasData = breakdown.total > 0;
 
@@ -23,6 +31,14 @@ export default function CostSummary({ breakdown }: CostSummaryProps) {
           </div>
         ) : (
           <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-gray-700 dark:text-gray-300">
+                {formatBilingualText("날짜 (Date)")}
+              </span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {formatDate(breakdown.date)}
+              </span>
+            </div>
             {breakdown.fuelCost > 0 && (
               <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
                 <span className="text-gray-700 dark:text-gray-300">

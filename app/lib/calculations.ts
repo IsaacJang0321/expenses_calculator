@@ -19,6 +19,7 @@ export interface AdditionalExpenses {
 }
 
 export interface CostBreakdown {
+  date: string; // YYYY-MM-DD format
   fuelCost: number;
   tollFee: number;
   parking: number;
@@ -46,10 +47,12 @@ export function calculateTotalCost(
   route: RouteInfo | null,
   vehicle: VehicleDetails | null,
   fuelPrice: number,
-  additionalExpenses: AdditionalExpenses
+  additionalExpenses: AdditionalExpenses,
+  date: string
 ): CostBreakdown {
   if (!route || !vehicle) {
     return {
+      date,
       fuelCost: 0,
       tollFee: 0,
       parking: additionalExpenses.parking,
@@ -76,6 +79,7 @@ export function calculateTotalCost(
     additionalExpenses.other;
 
   return {
+    date,
     fuelCost,
     tollFee: route.tollFee,
     parking: additionalExpenses.parking,
