@@ -20,6 +20,7 @@ import { formatBilingualText } from "./lib/textUtils";
 
 const CACHE_KEY = "trip_expenses_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const EXPENSE_LIST_KEY = "expense_list";
 
 interface CacheData {
   vehicle: VehicleDetails | null;
@@ -55,7 +56,7 @@ export default function Home() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  // Load cached vehicle preference on mount
+  // Load cached vehicle preference and expense list on mount
   useEffect(() => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
@@ -68,6 +69,17 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to load cache:", error);
+    }
+
+    // Load expense list
+    try {
+      const savedList = localStorage.getItem(EXPENSE_LIST_KEY);
+      if (savedList) {
+        const list: ExpenseItem[] = JSON.parse(savedList);
+        setExpenseList(list);
+      }
+    } catch (error) {
+      console.error("Failed to load expense list:", error);
     }
   }, []);
 
@@ -85,6 +97,15 @@ export default function Home() {
       }
     }
   }, [vehicle]);
+
+  // Save expense list to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXPENSE_LIST_KEY, JSON.stringify(expenseList));
+    } catch (error) {
+      console.error("Failed to save expense list:", error);
+    }
+  }, [expenseList]);
 
   const [manualFuelPrice, setManualFuelPrice] = useState<number | null>(null);
 
@@ -158,6 +179,15 @@ export default function Home() {
 
   const handleItemDelete = (id: string) => {
     setExpenseList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleDeleteAll = () => {
+    setExpenseList([]);
+    try {
+      localStorage.removeItem(EXPENSE_LIST_KEY);
+    } catch (error) {
+      console.error("Failed to delete expense list from localStorage:", error);
+    }
   };
 
   return (
@@ -306,6 +336,7 @@ export default function Home() {
               onItemClick={handleItemClick}
               onItemDelete={handleItemDelete}
               onAddClick={handleAddClick}
+              onDeleteAll={handleDeleteAll}
             />
           </div>
         </div>

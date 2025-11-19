@@ -16,6 +16,7 @@ interface ExpenseListProps {
   onItemClick: (item: ExpenseItem) => void;
   onItemDelete: (id: string) => void;
   onAddClick: () => void;
+  onDeleteAll: () => void;
 }
 
 function formatDate(dateString: string): string {
@@ -31,13 +32,28 @@ export default function ExpenseList({
   onItemClick,
   onItemDelete,
   onAddClick,
+  onDeleteAll,
 }: ExpenseListProps) {
   return (
     <div className="w-full">
       <div className="bg-gray-50 dark:bg-[#2d2d2d] rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 flex flex-col h-auto max-h-[calc(100vh-200px)]">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-          {formatBilingualText("경비 내역 (Expense List)")}
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+            {formatBilingualText("경비 내역 (Expense List)")}
+          </h2>
+          {items.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm(formatBilingualText("전체 내역을 삭제하시겠습니까? (Delete all expenses?)"))) {
+                  onDeleteAll();
+                }
+              }}
+              className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium transition-colors"
+            >
+              {formatBilingualText("내역 전체 삭제 (Delete All)")}
+            </button>
+          )}
+        </div>
 
         <div className={`space-y-2 mb-4 ${items.length > 5 ? "flex-1 overflow-y-auto min-h-0" : ""}`}>
           {items.length === 0 ? (
