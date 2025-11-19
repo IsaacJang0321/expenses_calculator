@@ -33,33 +33,14 @@ export async function POST(request: NextRequest) {
       clientSecretLength: clientSecret?.length || 0,
     });
 
-    // For development: return mock data if credentials are not configured
+    // Check if credentials are configured
     if (!clientId || !clientSecret) {
-      // Return mock routes for testing
-      const mockRoutes = [
-        {
-          distance: Math.floor(Math.random() * 100) + 200, // 200-300 km
-          duration: Math.floor(Math.random() * 60) + 120, // 120-180 min
-          tollFee: Math.floor(Math.random() * 10000) + 10000, // 10000-20000 KRW
-          path: [],
+      return NextResponse.json(
+        { 
+          error: formatBilingualError("Naver Map API 인증 정보가 설정되지 않았습니다. .env.local 파일에 NAVER_CLIENT_ID와 NAVER_CLIENT_SECRET을 추가해주세요. (Naver Map API credentials not configured. Please add NAVER_CLIENT_ID and NAVER_CLIENT_SECRET to your .env.local file.)")
         },
-        {
-          distance: Math.floor(Math.random() * 100) + 250,
-          duration: Math.floor(Math.random() * 60) + 150,
-          tollFee: Math.floor(Math.random() * 10000) + 15000,
-          path: [],
-        },
-        {
-          distance: Math.floor(Math.random() * 100) + 300,
-          duration: Math.floor(Math.random() * 60) + 180,
-          tollFee: Math.floor(Math.random() * 10000) + 8000,
-          path: [],
-        },
-      ];
-      return NextResponse.json({ 
-        routes: mockRoutes,
-        mock: true, // Flag to indicate this is mock data
-      });
+        { status: 400 }
+      );
     }
 
     // Helper function to geocode address to coordinates
@@ -344,7 +325,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in route API:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: formatBilingualError("경로를 찾을 수 없습니다. 주소를 다시 확인해주세요. (Could not find route. Please check your addresses again.)")
+      },
       { status: 500 }
     );
   }

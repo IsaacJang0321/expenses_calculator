@@ -20,6 +20,8 @@ export default function RouteSelector({
   const [error, setError] = useState<string | null>(null);
   const [useNaverMap, setUseNaverMap] = useState(true);
   const [useAddressInput, setUseAddressInput] = useState(false);
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [originalSelectedRoute, setOriginalSelectedRoute] = useState<RouteOption | null>(null);
   const [manualDistance, setManualDistance] = useState("");
   const [manualTollFee, setManualTollFee] = useState("");
   const [manualDuration, setManualDuration] = useState("");
@@ -50,14 +52,23 @@ export default function RouteSelector({
     }
 
     setError(null);
-    const manualRoute: RouteOption = {
+    const multiplier = isRoundTrip ? 2 : 1;
+    const originalRoute: RouteOption = {
       distance: distance,
       duration: duration,
       tollFee: tollFee,
       path: [],
     };
+    setOriginalSelectedRoute(originalRoute);
+    
+    const manualRoute: RouteOption = {
+      distance: distance * multiplier,
+      duration: duration * multiplier,
+      tollFee: tollFee * multiplier,
+      path: [],
+    };
 
-    setRoutes([manualRoute]);
+    setRoutes([originalRoute]);
     onRouteSelect(manualRoute);
   };
 
@@ -76,6 +87,7 @@ export default function RouteSelector({
     setLoading(true);
     setError(null);
     setRoutes([]);
+    setOriginalSelectedRoute(null);
 
     try {
       const results = await searchRoutes(departure, destination);
@@ -87,30 +99,10 @@ export default function RouteSelector({
       const errorMessage = err?.message || "Unknown error";
       if (errorMessage.includes("credentials") || errorMessage.includes("not configured")) {
         setError(formatBilingualText("Naver Map API 인증 정보가 설정되지 않았습니다. .env.local 파일에 NAVER_CLIENT_ID와 NAVER_CLIENT_SECRET을 추가해주세요. (Naver Map API credentials not configured. Please add NAVER_CLIENT_ID and NAVER_CLIENT_SECRET to your .env.local file.)"));
-        // Use mock data for development/testing
-        setRoutes([
-          {
-            distance: 250,
-            duration: 180,
-            tollFee: 15000,
-            path: [],
-          },
-          {
-            distance: 280,
-            duration: 150,
-            tollFee: 20000,
-            path: [],
-          },
-          {
-            distance: 300,
-            duration: 200,
-            tollFee: 12000,
-            path: [],
-          },
-        ]);
       } else {
-        setError(errorMessage);
+        setError(formatBilingualText("경로를 찾을 수 없습니다. 주소를 다시 확인해주세요. (Could not find route. Please check your addresses again.)"));
       }
+      setRoutes([]);
       console.error(err);
     } finally {
       setLoading(false);
@@ -136,6 +128,21 @@ export default function RouteSelector({
     }
     setError(null);
     setRoutes([]);
+  };
+
+  // Update selected route when round trip checkbox changes
+  const handleRoundTripChange = (checked: boolean) => {
+    setIsRoundTrip(checked);
+    if (originalSelectedRoute) {
+      const multiplier = checked ? 2 : 1;
+      const updatedRoute: RouteOption = {
+        distance: originalSelectedRoute.distance * multiplier,
+        duration: originalSelectedRoute.duration * multiplier,
+        tollFee: originalSelectedRoute.tollFee * multiplier,
+        path: originalSelectedRoute.path,
+      };
+      onRouteSelect(updatedRoute);
+    }
   };
 
   const handleAddressInputChange = (checked: boolean) => {
@@ -187,6 +194,22 @@ export default function RouteSelector({
                 className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
               >
                 {formatBilingualText("주소를 입력 (Enter address directly)")}
+              </label>
+            </div>
+            <div className="flex-1 border-l border-gray-300 dark:border-gray-600 mx-2"></div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="round-trip"
+                checked={isRoundTrip}
+                onChange={(e) => handleRoundTripChange(e.target.checked)}
+                className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500 dark:bg-[#1f1f1f] dark:border-gray-600 accent-green-500"
+              />
+              <label
+                htmlFor="round-trip"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+              >
+                {formatBilingualText("왕복 (Round Trip)")}
               </label>
             </div>
           </div>
@@ -335,7 +358,7 @@ export default function RouteSelector({
                 onClick={handleManualSubmit}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
               >
-                {formatBilingualText("적용 (Apply)")}
+                {formatBilingualText("적용")}
               </button>
             </>
           )}
@@ -351,32 +374,57 @@ export default function RouteSelector({
               {formatBilingualText("추천 경로 (Recommended Routes)")}
             </h3>
             <div className="space-y-3">
-              {routes.map((route, index) => (
-                <button
-                  key={index}
-                  onClick={() => onRouteSelect(route)}
-                  className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                    selectedRoute === route
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1f1f1f] hover:border-gray-300 dark:hover:border-gray-600"
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">
-                        {formatBilingualText(`경로 ${index + 1} (Route ${index + 1})`)}
+              {routes.map((route, index) => {
+                const multiplier = isRoundTrip ? 2 : 1;
+                const displayRoute = {
+                  ...route,
+                  distance: route.distance * multiplier,
+                  duration: route.duration * multiplier,
+                  tollFee: route.tollFee * multiplier,
+                };
+                return (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      // Store original route
+                      setOriginalSelectedRoute(route);
+                      const selectedRouteWithMultiplier: RouteOption = {
+                        distance: route.distance * multiplier,
+                        duration: route.duration * multiplier,
+                        tollFee: route.tollFee * multiplier,
+                        path: route.path,
+                      };
+                      onRouteSelect(selectedRouteWithMultiplier);
+                    }}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      selectedRoute && 
+                      selectedRoute.distance === displayRoute.distance &&
+                      selectedRoute.duration === displayRoute.duration &&
+                      selectedRoute.tollFee === displayRoute.tollFee
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1f1f1f] hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {formatBilingualText(`경로 ${index + 1} (Route ${index + 1})`)}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {displayRoute.distance}km • {displayRoute.duration}분 {formatBilingualText("(min)")} • {formatBilingualText("통행료 (Toll)")}: ₩
+                          {displayRoute.tollFee.toLocaleString()}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {route.distance}km • {route.duration}분 {formatBilingualText("(min)")} • {formatBilingualText("통행료 (Toll)")}: ₩
-                        {route.tollFee.toLocaleString()}
-                      </div>
+                      {selectedRoute && 
+                       selectedRoute.distance === displayRoute.distance &&
+                       selectedRoute.duration === displayRoute.duration &&
+                       selectedRoute.tollFee === displayRoute.tollFee && (
+                        <div className="text-blue-600 dark:text-blue-400">✓</div>
+                      )}
                     </div>
-                    {selectedRoute === route && (
-                      <div className="text-blue-600 dark:text-blue-400">✓</div>
-                    )}
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
