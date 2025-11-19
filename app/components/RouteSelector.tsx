@@ -1,30 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { searchRoutes, RouteOption } from "../lib/naverMap";
 import { formatBilingualText } from "../lib/textUtils";
 
 interface RouteSelectorProps {
   onRouteSelect: (route: RouteOption) => void;
   selectedRoute: RouteOption | null;
+  initialUseNaverMap?: boolean;
+  initialUseAddressInput?: boolean;
+  initialIsRoundTrip?: boolean;
+  initialDeparture?: string;
+  initialDestination?: string;
+  initialManualDistance?: string;
+  initialManualTollFee?: string;
+  initialManualDuration?: string;
+  onStateChange?: (state: {
+    useNaverMap: boolean;
+    useAddressInput: boolean;
+    isRoundTrip: boolean;
+    departure: string;
+    destination: string;
+    manualDistance: string;
+    manualTollFee: string;
+    manualDuration: string;
+  }) => void;
 }
 
 export default function RouteSelector({
   onRouteSelect,
   selectedRoute,
+  initialUseNaverMap = true,
+  initialUseAddressInput = false,
+  initialIsRoundTrip = false,
+  initialDeparture = "",
+  initialDestination = "",
+  initialManualDistance = "",
+  initialManualTollFee = "",
+  initialManualDuration = "",
+  onStateChange,
 }: RouteSelectorProps) {
-  const [departure, setDeparture] = useState("");
-  const [destination, setDestination] = useState("");
+  const [departure, setDeparture] = useState(initialDeparture);
+  const [destination, setDestination] = useState(initialDestination);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useNaverMap, setUseNaverMap] = useState(true);
-  const [useAddressInput, setUseAddressInput] = useState(false);
-  const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [useNaverMap, setUseNaverMap] = useState(initialUseNaverMap);
+  const [useAddressInput, setUseAddressInput] = useState(initialUseAddressInput);
+  const [isRoundTrip, setIsRoundTrip] = useState(initialIsRoundTrip);
   const [originalSelectedRoute, setOriginalSelectedRoute] = useState<RouteOption | null>(null);
-  const [manualDistance, setManualDistance] = useState("");
-  const [manualTollFee, setManualTollFee] = useState("");
-  const [manualDuration, setManualDuration] = useState("");
+  const [manualDistance, setManualDistance] = useState(initialManualDistance);
+  const [manualTollFee, setManualTollFee] = useState(initialManualTollFee);
+  const [manualDuration, setManualDuration] = useState(initialManualDuration);
+
+  // Track if we're initializing from props
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Sync with initial values when they change (only if not user input)
+  useEffect(() => {
+    if (!isInitialized) {
+      setUseNaverMap(initialUseNaverMap);
+      setUseAddressInput(initialUseAddressInput);
+      setIsRoundTrip(initialIsRoundTrip);
+      setDeparture(initialDeparture);
+      setDestination(initialDestination);
+      setManualDistance(initialManualDistance);
+      setManualTollFee(initialManualTollFee);
+      setManualDuration(initialManualDuration);
+      setIsInitialized(true);
+    } else {
+      // Only update if initial values actually changed (for restoration)
+      if (initialUseNaverMap !== useNaverMap) {
+        setUseNaverMap(initialUseNaverMap);
+      }
+      if (initialUseAddressInput !== useAddressInput) {
+        setUseAddressInput(initialUseAddressInput);
+      }
+      if (initialIsRoundTrip !== isRoundTrip) {
+        setIsRoundTrip(initialIsRoundTrip);
+      }
+      if (initialDeparture !== departure && initialDeparture) {
+        setDeparture(initialDeparture);
+      }
+      if (initialDestination !== destination && initialDestination) {
+        setDestination(initialDestination);
+      }
+      if (initialManualDistance !== manualDistance && initialManualDistance) {
+        setManualDistance(initialManualDistance);
+      }
+      if (initialManualTollFee !== manualTollFee && initialManualTollFee) {
+        setManualTollFee(initialManualTollFee);
+      }
+      if (initialManualDuration !== manualDuration && initialManualDuration) {
+        setManualDuration(initialManualDuration);
+      }
+    }
+  }, [initialUseNaverMap, initialUseAddressInput, initialIsRoundTrip, initialDeparture, initialDestination, initialManualDistance, initialManualTollFee, initialManualDuration]);
+
+  // Notify parent of state changes (debounced to avoid infinite loop)
+  useEffect(() => {
+    if (onStateChange && isInitialized) {
+      const timeoutId = setTimeout(() => {
+        onStateChange({
+          useNaverMap,
+          useAddressInput,
+          isRoundTrip,
+          departure,
+          destination,
+          manualDistance,
+          manualTollFee,
+          manualDuration,
+        });
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [useNaverMap, useAddressInput, isRoundTrip, departure, destination, manualDistance, manualTollFee, manualDuration, onStateChange, isInitialized]);
 
   const handleManualSubmit = () => {
     if (!manualDistance.trim() || !manualTollFee.trim()) {

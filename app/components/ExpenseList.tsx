@@ -2,14 +2,7 @@
 
 import { formatCurrency } from "../lib/calculations";
 import { formatBilingualText } from "../lib/textUtils";
-
-interface ExpenseItem {
-  id: string;
-  date: string;
-  breakdown: {
-    total: number;
-  };
-}
+import { ExpenseItem } from "../page";
 
 interface ExpenseListProps {
   items: ExpenseItem[];

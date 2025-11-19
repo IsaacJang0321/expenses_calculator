@@ -19,15 +19,45 @@ interface VehicleFormProps {
     fuelType: "gasoline" | "diesel" | "lpg" | "electric";
   } | null) => void;
   onFuelPriceChange?: (price: number | null) => void;
+  initialUseManualEfficiency?: boolean;
+  initialUseManualFuelPrice?: boolean;
+  initialManualEfficiency?: string;
+  initialManualFuelType?: "gasoline" | "diesel" | "lpg" | "electric";
+  initialManualFuelPrice?: string;
+  initialBrand?: string;
+  initialModel?: string;
+  initialSelectedVariantIndex?: number;
+  onStateChange?: (state: {
+    useManualEfficiency: boolean;
+    useManualFuelPrice: boolean;
+    manualEfficiency: string;
+    manualFuelType: "gasoline" | "diesel" | "lpg" | "electric";
+    manualFuelPrice: string;
+    brand: string;
+    model: string;
+    selectedVariantIndex: number;
+  }) => void;
 }
 
-export default function VehicleForm({ onVehicleChange, onFuelPriceChange }: VehicleFormProps) {
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
+export default function VehicleForm({ 
+  onVehicleChange, 
+  onFuelPriceChange,
+  initialUseManualEfficiency = false,
+  initialUseManualFuelPrice = false,
+  initialManualEfficiency = "",
+  initialManualFuelType = "gasoline",
+  initialManualFuelPrice = "",
+  initialBrand = "",
+  initialModel = "",
+  initialSelectedVariantIndex = 0,
+  onStateChange,
+}: VehicleFormProps) {
+  const [brand, setBrand] = useState(initialBrand);
+  const [model, setModel] = useState(initialModel);
   const [selectedFuelType, setSelectedFuelType] = useState<
     "gasoline" | "diesel" | "lpg" | "electric" | null
   >(null);
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(initialSelectedVariantIndex);
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
   const [fuelPrices, setFuelPrices] = useState<{
     gasoline: number;
@@ -37,11 +67,74 @@ export default function VehicleForm({ onVehicleChange, onFuelPriceChange }: Vehi
   } | null>(null);
   
   // Manual input states
-  const [useManualEfficiency, setUseManualEfficiency] = useState(false);
-  const [useManualFuelPrice, setUseManualFuelPrice] = useState(false);
-  const [manualEfficiency, setManualEfficiency] = useState("");
-  const [manualFuelType, setManualFuelType] = useState<"gasoline" | "diesel" | "lpg" | "electric">("gasoline");
-  const [manualFuelPrice, setManualFuelPrice] = useState("");
+  const [useManualEfficiency, setUseManualEfficiency] = useState(initialUseManualEfficiency);
+  const [useManualFuelPrice, setUseManualFuelPrice] = useState(initialUseManualFuelPrice);
+  const [manualEfficiency, setManualEfficiency] = useState(initialManualEfficiency);
+  const [manualFuelType, setManualFuelType] = useState<"gasoline" | "diesel" | "lpg" | "electric">(initialManualFuelType);
+  const [manualFuelPrice, setManualFuelPrice] = useState(initialManualFuelPrice);
+
+  // Track if we're initializing from props
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Sync with initial values when they change (only if not user input)
+  useEffect(() => {
+    if (!isInitialized) {
+      setUseManualEfficiency(initialUseManualEfficiency);
+      setUseManualFuelPrice(initialUseManualFuelPrice);
+      setManualEfficiency(initialManualEfficiency);
+      setManualFuelType(initialManualFuelType);
+      setManualFuelPrice(initialManualFuelPrice);
+      setBrand(initialBrand);
+      setModel(initialModel);
+      setSelectedVariantIndex(initialSelectedVariantIndex);
+      setIsInitialized(true);
+    } else {
+      // Only update if initial values actually changed (for restoration)
+      if (initialBrand !== brand && initialBrand) {
+        setBrand(initialBrand);
+      }
+      if (initialModel !== model && initialModel) {
+        setModel(initialModel);
+      }
+      if (initialSelectedVariantIndex !== selectedVariantIndex && initialSelectedVariantIndex !== undefined) {
+        setSelectedVariantIndex(initialSelectedVariantIndex);
+      }
+      if (initialUseManualEfficiency !== useManualEfficiency) {
+        setUseManualEfficiency(initialUseManualEfficiency);
+      }
+      if (initialUseManualFuelPrice !== useManualFuelPrice) {
+        setUseManualFuelPrice(initialUseManualFuelPrice);
+      }
+      if (initialManualEfficiency !== manualEfficiency && initialManualEfficiency) {
+        setManualEfficiency(initialManualEfficiency);
+      }
+      if (initialManualFuelType !== manualFuelType) {
+        setManualFuelType(initialManualFuelType);
+      }
+      if (initialManualFuelPrice !== manualFuelPrice && initialManualFuelPrice) {
+        setManualFuelPrice(initialManualFuelPrice);
+      }
+    }
+  }, [initialUseManualEfficiency, initialUseManualFuelPrice, initialManualEfficiency, initialManualFuelType, initialManualFuelPrice, initialBrand, initialModel, initialSelectedVariantIndex]);
+
+  // Notify parent of state changes (debounced to avoid infinite loop)
+  useEffect(() => {
+    if (onStateChange && isInitialized) {
+      const timeoutId = setTimeout(() => {
+        onStateChange({
+          useManualEfficiency,
+          useManualFuelPrice,
+          manualEfficiency,
+          manualFuelType,
+          manualFuelPrice,
+          brand,
+          model,
+          selectedVariantIndex,
+        });
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [useManualEfficiency, useManualFuelPrice, manualEfficiency, manualFuelType, manualFuelPrice, brand, model, selectedVariantIndex, onStateChange, isInitialized]);
 
   const brands = getBrands();
   const models = brand ? getModels(brand) : [];
@@ -61,27 +154,37 @@ export default function VehicleForm({ onVehicleChange, onFuelPriceChange }: Vehi
   }, []);
 
   useEffect(() => {
-    // Reset model when brand changes
-    setModel("");
-    setSelectedFuelType(null);
-    setVehicleInfo(null);
-    onVehicleChange(null);
+    // Reset model when brand changes (but not during initial restoration or when restoring from saved state)
+    if (isInitialized && brand && initialBrand !== brand) {
+      // Only reset if user actually changed the brand (not restoring)
+      setModel("");
+      setSelectedFuelType(null);
+      setVehicleInfo(null);
+      onVehicleChange(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand]);
+  }, [brand, isInitialized, initialBrand]);
 
   useEffect(() => {
-    // Reset variant when model changes
+    // Set variant when brand and model are set
     if (brand && model) {
-      setSelectedVariantIndex(0);
       const vehicleModel = getVehicleModel(brand, model);
-      if (vehicleModel && vehicleModel.variants[0]) {
-        setSelectedFuelType(vehicleModel.variants[0].fuelType);
+      if (vehicleModel && vehicleModel.variants.length > 0) {
+        // Use saved variant index if restoring, otherwise use first variant
+        const targetIndex = (initialModel === model && initialSelectedVariantIndex !== undefined && initialSelectedVariantIndex < vehicleModel.variants.length) 
+          ? initialSelectedVariantIndex 
+          : 0;
+        
+        setSelectedVariantIndex(targetIndex);
+        if (vehicleModel.variants[targetIndex]) {
+          setSelectedFuelType(vehicleModel.variants[targetIndex].fuelType);
+        }
       }
     } else {
       setSelectedFuelType(null);
       setSelectedVariantIndex(0);
     }
-  }, [brand, model]);
+  }, [brand, model, initialModel, initialSelectedVariantIndex]);
 
   useEffect(() => {
     if (useManualEfficiency) {

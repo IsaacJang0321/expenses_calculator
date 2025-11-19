@@ -27,13 +27,37 @@ interface CacheData {
   timestamp: number;
 }
 
-interface ExpenseItem {
+interface RouteSelectorState {
+  useNaverMap: boolean;
+  useAddressInput: boolean;
+  isRoundTrip: boolean;
+  departure: string;
+  destination: string;
+  manualDistance: string;
+  manualTollFee: string;
+  manualDuration: string;
+}
+
+interface VehicleFormState {
+  useManualEfficiency: boolean;
+  useManualFuelPrice: boolean;
+  manualEfficiency: string;
+  manualFuelType: "gasoline" | "diesel" | "lpg" | "electric";
+  manualFuelPrice: string;
+  brand: string;
+  model: string;
+  selectedVariantIndex: number;
+}
+
+export interface ExpenseItem {
   id: string;
   date: string;
   breakdown: CostBreakdown;
   route?: RouteOption;
   vehicle?: VehicleDetails;
   additionalExpenses: AdditionalExpensesType;
+  routeSelectorState?: RouteSelectorState;
+  vehicleFormState?: VehicleFormState;
 }
 
 export default function Home() {
@@ -55,6 +79,26 @@ export default function Home() {
   const [expenseList, setExpenseList] = useState<ExpenseItem[]>([]);
   const [showCalculator, setShowCalculator] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [calculatorKey, setCalculatorKey] = useState(0);
+
+  // RouteSelector states
+  const [routeUseNaverMap, setRouteUseNaverMap] = useState(true);
+  const [routeUseAddressInput, setRouteUseAddressInput] = useState(false);
+  const [routeIsRoundTrip, setRouteIsRoundTrip] = useState(false);
+  const [routeDeparture, setRouteDeparture] = useState("");
+  const [routeDestination, setRouteDestination] = useState("");
+  const [routeManualDistance, setRouteManualDistance] = useState("");
+  const [routeManualTollFee, setRouteManualTollFee] = useState("");
+  const [routeManualDuration, setRouteManualDuration] = useState("");
+
+  // VehicleForm states
+  const [vehicleUseManualEfficiency, setVehicleUseManualEfficiency] = useState(false);
+  const [vehicleUseManualFuelPrice, setVehicleUseManualFuelPrice] = useState(false);
+  const [vehicleManualEfficiency, setVehicleManualEfficiency] = useState("");
+  const [vehicleManualFuelType, setVehicleManualFuelType] = useState<"gasoline" | "diesel" | "lpg" | "electric">("gasoline");
+  const [vehicleBrand, setVehicleBrand] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehicleSelectedVariantIndex, setVehicleSelectedVariantIndex] = useState(0);
 
   // Load cached vehicle preference and expense list on mount
   useEffect(() => {
@@ -150,6 +194,7 @@ export default function Home() {
   const handleAddClick = () => {
     setShowCalculator(true);
     setEditingItemId(null);
+    setCalculatorKey(prev => prev + 1); // Force remount by changing key
     // Reset form when adding new
     setSelectedRoute(null);
     setVehicle(null);
@@ -161,6 +206,25 @@ export default function Home() {
     });
     setTripDate(new Date().toISOString().split("T")[0]);
     setManualFuelPrice(null);
+    
+    // Reset RouteSelector states
+    setRouteUseNaverMap(true);
+    setRouteUseAddressInput(false);
+    setRouteIsRoundTrip(false);
+    setRouteDeparture("");
+    setRouteDestination("");
+    setRouteManualDistance("");
+    setRouteManualTollFee("");
+    setRouteManualDuration("");
+    
+    // Reset VehicleForm states
+    setVehicleUseManualEfficiency(false);
+    setVehicleUseManualFuelPrice(false);
+    setVehicleManualEfficiency("");
+    setVehicleManualFuelType("gasoline");
+    setVehicleBrand("");
+    setVehicleModel("");
+    setVehicleSelectedVariantIndex(0);
   };
 
   const handleItemClick = (item: ExpenseItem) => {
@@ -175,6 +239,56 @@ export default function Home() {
     }
     setAdditionalExpenses(item.additionalExpenses);
     setTripDate(item.date);
+    
+    // Restore RouteSelector states
+    if (item.routeSelectorState) {
+      setRouteUseNaverMap(item.routeSelectorState.useNaverMap);
+      setRouteUseAddressInput(item.routeSelectorState.useAddressInput);
+      setRouteIsRoundTrip(item.routeSelectorState.isRoundTrip);
+      setRouteDeparture(item.routeSelectorState.departure);
+      setRouteDestination(item.routeSelectorState.destination);
+      setRouteManualDistance(item.routeSelectorState.manualDistance);
+      setRouteManualTollFee(item.routeSelectorState.manualTollFee);
+      setRouteManualDuration(item.routeSelectorState.manualDuration);
+    } else {
+      // Fallback to defaults if state not saved
+      setRouteUseNaverMap(true);
+      setRouteUseAddressInput(false);
+      setRouteIsRoundTrip(false);
+      setRouteDeparture("");
+      setRouteDestination("");
+      setRouteManualDistance("");
+      setRouteManualTollFee("");
+      setRouteManualDuration("");
+    }
+    
+    // Restore VehicleForm states
+    if (item.vehicleFormState) {
+      setVehicleUseManualEfficiency(item.vehicleFormState.useManualEfficiency);
+      setVehicleUseManualFuelPrice(item.vehicleFormState.useManualFuelPrice);
+      setVehicleManualEfficiency(item.vehicleFormState.manualEfficiency);
+      setVehicleManualFuelType(item.vehicleFormState.manualFuelType);
+      setVehicleBrand(item.vehicleFormState.brand);
+      setVehicleModel(item.vehicleFormState.model);
+      setVehicleSelectedVariantIndex(item.vehicleFormState.selectedVariantIndex);
+      
+      // Restore manual fuel price if applicable
+      if (item.vehicleFormState.useManualFuelPrice && item.vehicleFormState.manualFuelPrice) {
+        setManualFuelPrice(parseFloat(item.vehicleFormState.manualFuelPrice));
+      } else {
+        setManualFuelPrice(null);
+      }
+    } else {
+      // Fallback to defaults if state not saved
+      setVehicleUseManualEfficiency(false);
+      setVehicleUseManualFuelPrice(false);
+      setVehicleManualEfficiency("");
+      setVehicleManualFuelType("gasoline");
+      setVehicleBrand("");
+      setVehicleModel("");
+      setVehicleSelectedVariantIndex(0);
+      setManualFuelPrice(null);
+    }
   };
 
   const handleItemDelete = (id: string) => {
@@ -211,7 +325,7 @@ export default function Home() {
                 : "w-0 opacity-0 max-h-0 pointer-events-none"
             }`}
           >
-            <div className={`space-y-6 transition-opacity duration-500 ${showCalculator ? "opacity-100" : "opacity-0"}`}>
+            <div key={`calculator-${calculatorKey}`} className={`space-y-6 transition-opacity duration-500 ${showCalculator ? "opacity-100" : "opacity-0"}`}>
           {/* Date Selector - Always visible */}
           <div>
             <DateSelector date={tripDate} onDateChange={setTripDate} />
@@ -224,10 +338,29 @@ export default function Home() {
             }`}
           >
             <RouteSelector
+              key={`route-selector-${calculatorKey}`}
               onRouteSelect={(route) => {
                 setSelectedRoute(route);
               }}
               selectedRoute={selectedRoute}
+              initialUseNaverMap={routeUseNaverMap}
+              initialUseAddressInput={routeUseAddressInput}
+              initialIsRoundTrip={routeIsRoundTrip}
+              initialDeparture={routeDeparture}
+              initialDestination={routeDestination}
+              initialManualDistance={routeManualDistance}
+              initialManualTollFee={routeManualTollFee}
+              initialManualDuration={routeManualDuration}
+              onStateChange={(state) => {
+                setRouteUseNaverMap(state.useNaverMap);
+                setRouteUseAddressInput(state.useAddressInput);
+                setRouteIsRoundTrip(state.isRoundTrip);
+                setRouteDeparture(state.departure);
+                setRouteDestination(state.destination);
+                setRouteManualDistance(state.manualDistance);
+                setRouteManualTollFee(state.manualTollFee);
+                setRouteManualDuration(state.manualDuration);
+              }}
             />
           </div>
 
@@ -242,10 +375,33 @@ export default function Home() {
             {showVehicleForm && (
               <div className="mt-6">
                 <VehicleForm
+                  key={`vehicle-form-${editingItemId || 'new'}-${vehicleBrand}-${vehicleModel}`}
                   onVehicleChange={(v) => {
                     setVehicle(v);
                   }}
                   onFuelPriceChange={setManualFuelPrice}
+                  initialUseManualEfficiency={vehicleUseManualEfficiency}
+                  initialUseManualFuelPrice={vehicleUseManualFuelPrice}
+                  initialManualEfficiency={vehicleManualEfficiency}
+                  initialManualFuelType={vehicleManualFuelType}
+                  initialManualFuelPrice={vehicleUseManualFuelPrice && manualFuelPrice !== null ? manualFuelPrice.toString() : ""}
+                  initialBrand={vehicleBrand}
+                  initialModel={vehicleModel}
+                  initialSelectedVariantIndex={vehicleSelectedVariantIndex}
+                  onStateChange={(state) => {
+                    setVehicleUseManualEfficiency(state.useManualEfficiency);
+                    setVehicleUseManualFuelPrice(state.useManualFuelPrice);
+                    setVehicleManualEfficiency(state.manualEfficiency);
+                    setVehicleManualFuelType(state.manualFuelType);
+                    setVehicleBrand(state.brand);
+                    setVehicleModel(state.model);
+                    setVehicleSelectedVariantIndex(state.selectedVariantIndex);
+                    if (state.useManualFuelPrice && state.manualFuelPrice) {
+                      setManualFuelPrice(parseFloat(state.manualFuelPrice));
+                    } else if (!state.useManualFuelPrice) {
+                      setManualFuelPrice(null);
+                    }
+                  }}
                 />
               </div>
             )}
@@ -279,6 +435,28 @@ export default function Home() {
                 <div className="mt-6 w-full max-w-2xl mx-auto">
                   <button
                     onClick={() => {
+                      const routeSelectorState: RouteSelectorState = {
+                        useNaverMap: routeUseNaverMap,
+                        useAddressInput: routeUseAddressInput,
+                        isRoundTrip: routeIsRoundTrip,
+                        departure: routeDeparture,
+                        destination: routeDestination,
+                        manualDistance: routeManualDistance,
+                        manualTollFee: routeManualTollFee,
+                        manualDuration: routeManualDuration,
+                      };
+
+                      const vehicleFormState: VehicleFormState = {
+                        useManualEfficiency: vehicleUseManualEfficiency,
+                        useManualFuelPrice: vehicleUseManualFuelPrice,
+                        manualEfficiency: vehicleManualEfficiency,
+                        manualFuelType: vehicleManualFuelType,
+                        manualFuelPrice: vehicleUseManualFuelPrice && manualFuelPrice !== null ? manualFuelPrice.toString() : "",
+                        brand: vehicleBrand,
+                        model: vehicleModel,
+                        selectedVariantIndex: vehicleSelectedVariantIndex,
+                      };
+
                       const newItem: ExpenseItem = {
                         id: editingItemId || `expense-${Date.now()}`,
                         date: tripDate,
@@ -286,6 +464,8 @@ export default function Home() {
                         route: selectedRoute || undefined,
                         vehicle: vehicle || undefined,
                         additionalExpenses,
+                        routeSelectorState,
+                        vehicleFormState,
                       };
 
                       if (editingItemId) {
@@ -313,6 +493,25 @@ export default function Home() {
                       });
                       setTripDate(new Date().toISOString().split("T")[0]);
                       setManualFuelPrice(null);
+                      
+                      // Reset RouteSelector states
+                      setRouteUseNaverMap(true);
+                      setRouteUseAddressInput(false);
+                      setRouteIsRoundTrip(false);
+                      setRouteDeparture("");
+                      setRouteDestination("");
+                      setRouteManualDistance("");
+                      setRouteManualTollFee("");
+                      setRouteManualDuration("");
+                      
+                      // Reset VehicleForm states
+                      setVehicleUseManualEfficiency(false);
+                      setVehicleUseManualFuelPrice(false);
+                      setVehicleManualEfficiency("");
+                      setVehicleManualFuelType("gasoline");
+                      setVehicleBrand("");
+                      setVehicleModel("");
+                      setVehicleSelectedVariantIndex(0);
                     }}
                     disabled={breakdown.total === 0}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
