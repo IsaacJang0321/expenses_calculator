@@ -18,9 +18,10 @@ interface VehicleFormProps {
     efficiency: number;
     fuelType: "gasoline" | "diesel" | "lpg" | "electric";
   } | null) => void;
+  onFuelPriceChange?: (price: number | null) => void;
 }
 
-export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
+export default function VehicleForm({ onVehicleChange, onFuelPriceChange }: VehicleFormProps) {
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [selectedFuelType, setSelectedFuelType] = useState<
@@ -34,6 +35,13 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
     diesel: number;
     lpg: number;
   } | null>(null);
+  
+  // Manual input states
+  const [useManualEfficiency, setUseManualEfficiency] = useState(false);
+  const [useManualFuelPrice, setUseManualFuelPrice] = useState(false);
+  const [manualEfficiency, setManualEfficiency] = useState("");
+  const [manualFuelType, setManualFuelType] = useState<"gasoline" | "diesel" | "lpg" | "electric">("gasoline");
+  const [manualFuelPrice, setManualFuelPrice] = useState("");
 
   const brands = getBrands();
   const models = brand ? getModels(brand) : [];
@@ -76,7 +84,26 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
   }, [brand, model]);
 
   useEffect(() => {
-    if (brand && model && variants.length > 0 && selectedVariantIndex >= 0) {
+    if (useManualEfficiency) {
+      // Manual efficiency mode
+      if (manualEfficiency && parseFloat(manualEfficiency) > 0) {
+        const info: VehicleInfo = {
+          efficiency: parseFloat(manualEfficiency),
+          fuelType: manualFuelType,
+        };
+        setVehicleInfo(info);
+        onVehicleChange({
+          brand: "",
+          model: "",
+          efficiency: info.efficiency,
+          fuelType: info.fuelType,
+        });
+      } else {
+        setVehicleInfo(null);
+        onVehicleChange(null);
+      }
+    } else if (brand && model && variants.length > 0 && selectedVariantIndex >= 0) {
+      // Brand/model selection mode
       const selectedVariant = variants[selectedVariantIndex];
       if (selectedVariant) {
         setSelectedFuelType(selectedVariant.fuelType);
@@ -97,9 +124,9 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
       onVehicleChange(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand, model, selectedVariantIndex]);
+  }, [brand, model, selectedVariantIndex, useManualEfficiency, manualEfficiency, manualFuelType]);
 
-  const currentFuelPrice = vehicleInfo && fuelPrices
+  const currentFuelPrice = vehicleInfo && !useManualFuelPrice && fuelPrices
     ? getFuelPriceByType(vehicleInfo.fuelType, {
         gasoline: fuelPrices.gasoline,
         premiumGasoline: fuelPrices.premiumGasoline,
@@ -107,7 +134,43 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
         lpg: fuelPrices.lpg,
         timestamp: Date.now(),
       })
+    : useManualFuelPrice && manualFuelPrice && parseFloat(manualFuelPrice) > 0
+    ? parseFloat(manualFuelPrice)
     : null;
+  
+  // Handle manual efficiency checkbox
+  const handleManualEfficiencyChange = (checked: boolean) => {
+    setUseManualEfficiency(checked);
+    if (checked) {
+      setBrand("");
+      setModel("");
+      setSelectedVariantIndex(0);
+    } else {
+      setManualEfficiency("");
+      setManualFuelType("gasoline");
+    }
+  };
+  
+  // Handle manual fuel price checkbox
+  const handleManualFuelPriceChange = (checked: boolean) => {
+    setUseManualFuelPrice(checked);
+    if (!checked) {
+      setManualFuelPrice("");
+      if (onFuelPriceChange) {
+        onFuelPriceChange(null);
+      }
+    }
+  };
+
+  // Update fuel price when manual input changes
+  useEffect(() => {
+    if (useManualFuelPrice && manualFuelPrice && parseFloat(manualFuelPrice) > 0 && onFuelPriceChange) {
+      onFuelPriceChange(parseFloat(manualFuelPrice));
+    } else if (!useManualFuelPrice && onFuelPriceChange) {
+      onFuelPriceChange(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useManualFuelPrice, manualFuelPrice]);
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -117,10 +180,78 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
         </h2>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {formatBilingualText("브랜드 (Brand)")}
-            </label>
+          {/* Manual input checkboxes */}
+          <div className="flex items-center gap-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="manual-efficiency"
+                checked={useManualEfficiency}
+                onChange={(e) => handleManualEfficiencyChange(e.target.checked)}
+                className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500 dark:bg-[#1f1f1f] dark:border-gray-600 accent-green-500"
+              />
+              <label
+                htmlFor="manual-efficiency"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+              >
+                {formatBilingualText("연비 직접 입력 (Enter efficiency manually)")}
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="manual-fuel-price"
+                checked={useManualFuelPrice}
+                onChange={(e) => handleManualFuelPriceChange(e.target.checked)}
+                className="w-5 h-5 text-green-500 border-gray-300 rounded focus:ring-green-500 dark:bg-[#1f1f1f] dark:border-gray-600 accent-green-500"
+              />
+              <label
+                htmlFor="manual-fuel-price"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+              >
+                {formatBilingualText("유가 직접 입력 (Enter fuel price manually)")}
+              </label>
+            </div>
+          </div>
+
+          {useManualEfficiency ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {formatBilingualText("연료 타입 (Fuel Type)")}
+                </label>
+                <select
+                  value={manualFuelType}
+                  onChange={(e) => setManualFuelType(e.target.value as "gasoline" | "diesel" | "lpg" | "electric")}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100"
+                >
+                  <option value="gasoline">{formatBilingualText("휘발유 (Gasoline)")}</option>
+                  <option value="diesel">{formatBilingualText("경유 (Diesel)")}</option>
+                  <option value="lpg">LPG</option>
+                  <option value="electric">{formatBilingualText("전기 (Electric)")}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {formatBilingualText("연비 (Fuel Efficiency)")} (km/L)
+                </label>
+                <input
+                  type="number"
+                  value={manualEfficiency}
+                  onChange={(e) => setManualEfficiency(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="0.1"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {formatBilingualText("브랜드 (Brand)")}
+                </label>
             <select
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
@@ -186,6 +317,8 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
               </select>
             </div>
           )}
+            </>
+          )}
 
           {vehicleInfo && (
             <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -224,7 +357,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
                 </div>
               </div>
 
-              {currentFuelPrice !== null && vehicleInfo.fuelType !== "electric" && (
+              {!useManualFuelPrice && currentFuelPrice !== null && vehicleInfo.fuelType !== "electric" && (
                 <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     {formatBilingualText("오늘의 연료 가격 (Today's Fuel Price)")}
@@ -232,6 +365,28 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
                   <div className="font-semibold text-lg text-blue-600 dark:text-blue-400">
                     ₩{currentFuelPrice.toLocaleString()}/L ({vehicleInfo.fuelType})
                   </div>
+                </div>
+              )}
+
+              {useManualFuelPrice && vehicleInfo.fuelType !== "electric" && (
+                <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {formatBilingualText("유가 (Fuel Price)")} (₩/L)
+                  </div>
+                  <input
+                    type="number"
+                    value={manualFuelPrice}
+                    onChange={(e) => setManualFuelPrice(e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    step="1"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-[#1f1f1f] text-gray-900 dark:text-gray-100"
+                  />
+                  {manualFuelPrice && parseFloat(manualFuelPrice) > 0 && (
+                    <div className="mt-2 font-semibold text-lg text-blue-600 dark:text-blue-400">
+                      ₩{parseFloat(manualFuelPrice).toLocaleString()}/L ({vehicleInfo.fuelType})
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -248,7 +403,7 @@ export default function VehicleForm({ onVehicleChange }: VehicleFormProps) {
             </div>
           )}
 
-          {fuelPrices && !vehicleInfo && (
+          {fuelPrices && !vehicleInfo && !useManualFuelPrice && (
             <div className="p-4 bg-gray-50 dark:bg-[#1f1f1f] rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {"오늘의 연료 가격"}

@@ -68,15 +68,19 @@ export default function Home() {
     }
   }, [vehicle]);
 
-  // Fetch fuel price when vehicle is selected
+  const [manualFuelPrice, setManualFuelPrice] = useState<number | null>(null);
+
+  // Fetch fuel price when vehicle is selected (only if not using manual price)
   useEffect(() => {
-    if (vehicle) {
+    if (vehicle && manualFuelPrice === null) {
       getFuelPrices().then((prices) => {
         const price = getFuelPriceByType(vehicle.fuelType, prices);
         setFuelPrice(price);
       });
+    } else if (manualFuelPrice !== null) {
+      setFuelPrice(manualFuelPrice);
     }
-  }, [vehicle]);
+  }, [vehicle, manualFuelPrice]);
 
   // Show vehicle form when route is selected
   useEffect(() => {
@@ -144,6 +148,7 @@ export default function Home() {
                   onVehicleChange={(v) => {
                     setVehicle(v);
                   }}
+                  onFuelPriceChange={setManualFuelPrice}
                 />
               </div>
             )}
