@@ -5,6 +5,7 @@ import RouteSelector from "./components/RouteSelector";
 import DateSelector from "./components/DateSelector";
 import VehicleForm from "./components/VehicleForm";
 import AdditionalExpenses from "./components/AdditionalExpenses";
+import MemoSection from "./components/MemoSection";
 import CostSummary from "./components/CostSummary";
 import ExpenseList from "./components/ExpenseList";
 import {
@@ -17,6 +18,13 @@ import {
 import { getFuelPrices, getFuelPriceByType } from "./lib/fuelPrice";
 import { RouteOption } from "./lib/naverMap";
 import { formatBilingualText } from "./lib/textUtils";
+import {
+  generateExportData,
+  exportToCSV,
+  exportToXLSX,
+  exportToPNG,
+  exportToPDF,
+} from "./lib/exportUtils";
 
 const CACHE_KEY = "trip_expenses_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
@@ -58,6 +66,7 @@ export interface ExpenseItem {
   additionalExpenses: AdditionalExpensesType;
   routeSelectorState?: RouteSelectorState;
   vehicleFormState?: VehicleFormState;
+  memo?: string;
 }
 
 export default function Home() {
@@ -76,6 +85,8 @@ export default function Home() {
   const [fuelPrice, setFuelPrice] = useState<number>(0);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [showAdditionalExpenses, setShowAdditionalExpenses] = useState(false);
+  const [showMemoSection, setShowMemoSection] = useState(false);
+  const [memo, setMemo] = useState<string>("");
   const [expenseList, setExpenseList] = useState<ExpenseItem[]>([]);
   const [showCalculator, setShowCalculator] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -175,6 +186,11 @@ export default function Home() {
     setShowAdditionalExpenses(vehicle !== null);
   }, [vehicle]);
 
+  // Show memo section when additional expenses are shown
+  useEffect(() => {
+    setShowMemoSection(showAdditionalExpenses);
+  }, [showAdditionalExpenses]);
+
   const routeInfo: RouteInfo | null = selectedRoute
     ? {
         distance: selectedRoute.distance,
@@ -206,6 +222,7 @@ export default function Home() {
     });
     setTripDate(new Date().toISOString().split("T")[0]);
     setManualFuelPrice(null);
+    setMemo("");
     
     // Reset RouteSelector states
     setRouteUseNaverMap(true);
@@ -239,6 +256,7 @@ export default function Home() {
     }
     setAdditionalExpenses(item.additionalExpenses);
     setTripDate(item.date);
+    setMemo(item.memo || "");
     
     // Restore RouteSelector states
     if (item.routeSelectorState) {
@@ -301,6 +319,57 @@ export default function Home() {
       localStorage.removeItem(EXPENSE_LIST_KEY);
     } catch (error) {
       console.error("Failed to delete expense list from localStorage:", error);
+    }
+  };
+
+  const handleExport = async (exportData: {
+    author: string;
+    createdDate: string;
+    startDate: string;
+    endDate: string;
+    format: "csv" | "xlsx" | "png" | "pdf";
+  }) => {
+    const { rows, summary } = generateExportData(
+      expenseList,
+      exportData.author,
+      exportData.createdDate,
+      exportData.startDate,
+      exportData.endDate
+    );
+
+    if (rows.length === 0) {
+      alert(
+        formatBilingualText(
+          "선택한 기간에 해당하는 경비 내역이 없습니다. (No expenses found for the selected period)"
+        )
+      );
+      return;
+    }
+
+    const filename = `경비내역_${exportData.startDate}_${exportData.endDate}`;
+
+    try {
+      switch (exportData.format) {
+        case "csv":
+          exportToCSV(rows, summary, filename);
+          break;
+        case "xlsx":
+          exportToXLSX(rows, summary, filename);
+          break;
+        case "png":
+          await exportToPNG(rows, summary, filename);
+          break;
+        case "pdf":
+          await exportToPDF(rows, summary, filename);
+          break;
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(
+        formatBilingualText(
+          "내보내기 중 오류가 발생했습니다. (An error occurred during export)"
+        )
+      );
     }
   };
 
@@ -426,6 +495,24 @@ export default function Home() {
             )}
           </div>
 
+          {/* Memo Section - Expands after additional expenses */}
+          <div
+            className={`transition-all duration-300 overflow-hidden ${
+              showMemoSection
+                ? "max-h-[1000px] opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            {showMemoSection && (
+              <div className="mt-6">
+                <MemoSection
+                  memo={memo}
+                  onMemoChange={setMemo}
+                />
+              </div>
+            )}
+          </div>
+
                 {/* Cost Summary */}
                 <div className="mt-6">
                   <CostSummary breakdown={breakdown} />
@@ -466,6 +553,7 @@ export default function Home() {
                         additionalExpenses,
                         routeSelectorState,
                         vehicleFormState,
+                        memo: memo || undefined,
                       };
 
                       if (editingItemId) {
@@ -493,6 +581,7 @@ export default function Home() {
                       });
                       setTripDate(new Date().toISOString().split("T")[0]);
                       setManualFuelPrice(null);
+                      setMemo("");
                       
                       // Reset RouteSelector states
                       setRouteUseNaverMap(true);
@@ -536,6 +625,7 @@ export default function Home() {
               onItemDelete={handleItemDelete}
               onAddClick={handleAddClick}
               onDeleteAll={handleDeleteAll}
+              onExport={handleExport}
             />
           </div>
         </div>

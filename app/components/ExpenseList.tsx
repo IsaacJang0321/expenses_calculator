@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { formatCurrency } from "../lib/calculations";
 import { formatBilingualText } from "../lib/textUtils";
 import { ExpenseItem } from "../page";
+import ExportModal from "./ExportModal";
 
 interface ExpenseListProps {
   items: ExpenseItem[];
@@ -10,6 +12,13 @@ interface ExpenseListProps {
   onItemDelete: (id: string) => void;
   onAddClick: () => void;
   onDeleteAll: () => void;
+  onExport?: (exportData: {
+    author: string;
+    createdDate: string;
+    startDate: string;
+    endDate: string;
+    format: "csv" | "xlsx" | "png" | "pdf";
+  }) => void;
 }
 
 function formatDate(dateString: string): string {
@@ -26,7 +35,10 @@ export default function ExpenseList({
   onItemDelete,
   onAddClick,
   onDeleteAll,
+  onExport,
 }: ExpenseListProps) {
+  const [showExportModal, setShowExportModal] = useState(false);
+
   return (
     <div className="w-full">
       <div className="bg-gray-50 dark:bg-[#2d2d2d] rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 flex flex-col h-auto max-h-[calc(100vh-200px)]">
@@ -100,11 +112,29 @@ export default function ExpenseList({
 
         <button
           onClick={onAddClick}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors mb-3"
         >
           {formatBilingualText("추가 (Add)")}
         </button>
+
+        {onExport && (
+          <button
+            onClick={() => setShowExportModal(true)}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+          >
+            {formatBilingualText("내보내기 (Export)")}
+          </button>
+        )}
       </div>
+
+      {onExport && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          items={items}
+          onExport={onExport}
+        />
+      )}
     </div>
   );
 }
