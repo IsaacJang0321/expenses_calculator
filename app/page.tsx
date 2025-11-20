@@ -91,6 +91,8 @@ export default function Home() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [calculatorKey, setCalculatorKey] = useState(0);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
 
   // RouteSelector states
   const [routeUseNaverMap, setRouteUseNaverMap] = useState(true);
@@ -319,6 +321,98 @@ export default function Home() {
       localStorage.removeItem(EXPENSE_LIST_KEY);
     } catch (error) {
       console.error("Failed to delete expense list from localStorage:", error);
+    }
+  };
+
+  // Scroll position tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Check if page is scrollable
+      const isScrollable = documentHeight > windowHeight;
+      
+      // Show button if page is scrollable (always show if scrollable, even at top)
+      setShowScrollButton(isScrollable);
+      
+      // Determine if we're closer to top or bottom
+      // If at top or scrolled less than 30% of page, show "go to bottom" button
+      // Otherwise, show "go to top" button
+      if (scrollY === 0) {
+        setIsScrolledDown(true); // At top, show "go to bottom"
+      } else {
+        const scrollPercentage = scrollY / (documentHeight - windowHeight);
+        setIsScrolledDown(scrollPercentage < 0.3);
+      }
+    };
+
+    // Initial check immediately
+    handleScroll();
+
+    // Also check after a short delay to ensure DOM is fully rendered
+    const timeoutId = setTimeout(() => {
+      handleScroll();
+    }, 100);
+
+    // Check on window load
+    window.addEventListener("load", handleScroll);
+    
+    // Check on scroll
+    window.addEventListener("scroll", handleScroll);
+    
+    // Check on resize (content might change)
+    window.addEventListener("resize", handleScroll);
+
+    // Use MutationObserver to detect DOM changes (e.g., when calculator appears)
+    const observer = new MutationObserver(() => {
+      // Debounce the check to avoid too many calls
+      setTimeout(handleScroll, 50);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("load", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+      observer.disconnect();
+    };
+  }, [showCalculator]); // Re-check when calculator visibility changes
+
+  // Also check scroll when calculator visibility changes (with delay for animation)
+  useEffect(() => {
+    if (showCalculator) {
+      // Check after animation completes (500ms transition duration)
+      const timeoutId = setTimeout(() => {
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const isScrollable = documentHeight > windowHeight;
+        setShowScrollButton(isScrollable);
+        if (scrollY === 0) {
+          setIsScrolledDown(true);
+        }
+      }, 600); // Slightly longer than animation duration
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showCalculator]);
+
+  const handleScrollClick = () => {
+    if (isScrolledDown) {
+      // Scroll to bottom
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+    } else {
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -645,6 +739,47 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Scroll to top/bottom button */}
+      {showScrollButton && (
+        <button
+          onClick={handleScrollClick}
+          className="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 flex items-center justify-center w-14 h-14"
+          aria-label={isScrolledDown ? formatBilingualText("맨 아래로 (Go to bottom)") : formatBilingualText("맨 위로 (Go to top)")}
+        >
+          {isScrolledDown ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 10l7-7m0 0l7 7m-7-7v18"
+              />
+            </svg>
+          )}
+        </button>
+      )}
     </main>
   );
 }
