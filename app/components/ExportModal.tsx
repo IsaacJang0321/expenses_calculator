@@ -163,20 +163,52 @@ export default function ExportModal({
               {formatBilingualText("내보내기 형식 (Export Format)")}
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {(["csv", "xlsx", "png", "pdf"] as const).map((fmt) => (
-                <button
-                  key={fmt}
-                  type="button"
-                  onClick={() => setFormat(fmt)}
-                  className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-                    format === fmt
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                      : "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500"
-                  }`}
-                >
-                  {fmt.toUpperCase()}
-                </button>
-              ))}
+              {(["csv", "xlsx", "png", "pdf"] as const).map((fmt) => {
+                // Define colors for each format
+                const formatColors: Record<typeof fmt, {
+                  selected: string;
+                  unselected: string;
+                  hover: string;
+                }> = {
+                  csv: {
+                    selected: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300",
+                    unselected: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-700 dark:text-gray-300",
+                    hover: "hover:border-green-400 dark:hover:border-green-500"
+                  },
+                  xlsx: {
+                    selected: "border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300",
+                    unselected: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-700 dark:text-gray-300",
+                    hover: "hover:border-green-400 dark:hover:border-green-500"
+                  },
+                  png: {
+                    selected: "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300",
+                    unselected: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-700 dark:text-gray-300",
+                    hover: "hover:border-orange-400 dark:hover:border-orange-500"
+                  },
+                  pdf: {
+                    selected: "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300",
+                    unselected: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1f1f1f] text-gray-700 dark:text-gray-300",
+                    hover: "hover:border-red-400 dark:hover:border-red-500"
+                  }
+                };
+
+                const colors = formatColors[fmt];
+
+                return (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => setFormat(fmt)}
+                    className={`px-4 py-2 rounded-lg border-2 transition-colors ${
+                      format === fmt
+                        ? colors.selected
+                        : `${colors.unselected} ${colors.hover}`
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
