@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatBilingualText } from "../lib/textUtils";
 
 interface AdditionalExpensesProps {
@@ -10,17 +10,44 @@ interface AdditionalExpensesProps {
     accommodation: number;
     other: number;
   }) => void;
+  initialExpenses?: {
+    parking: number;
+    meals: number;
+    accommodation: number;
+    other: number;
+  };
 }
 
 export default function AdditionalExpenses({
   onExpensesChange,
+  initialExpenses,
 }: AdditionalExpensesProps) {
-  const [expenses, setExpenses] = useState({
-    parking: { enabled: false, amount: 0 },
-    meals: { enabled: false, amount: 0 },
-    accommodation: { enabled: false, amount: 0 },
-    other: { enabled: false, amount: 0 },
-  });
+  // Initialize expenses from initialExpenses if provided
+  const getInitialExpensesState = () => {
+    if (initialExpenses) {
+      const hasValues = initialExpenses.parking > 0 || 
+                       initialExpenses.meals > 0 || 
+                       initialExpenses.accommodation > 0 || 
+                       initialExpenses.other > 0;
+      
+      if (hasValues) {
+        return {
+          parking: { enabled: initialExpenses.parking > 0, amount: initialExpenses.parking },
+          meals: { enabled: initialExpenses.meals > 0, amount: initialExpenses.meals },
+          accommodation: { enabled: initialExpenses.accommodation > 0, amount: initialExpenses.accommodation },
+          other: { enabled: initialExpenses.other > 0, amount: initialExpenses.other },
+        };
+      }
+    }
+    return {
+      parking: { enabled: false, amount: 0 },
+      meals: { enabled: false, amount: 0 },
+      accommodation: { enabled: false, amount: 0 },
+      other: { enabled: false, amount: 0 },
+    };
+  };
+
+  const [expenses, setExpenses] = useState(getInitialExpensesState());
 
   const updateExpense = (
     key: keyof typeof expenses,

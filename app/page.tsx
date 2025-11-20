@@ -485,8 +485,9 @@ export default function Home() {
             }`}
           >
             {showAdditionalExpenses && (
-              <div className="mt-6">
+              <div className="mt-6" key={`additional-expenses-${calculatorKey}-${editingItemId || 'new'}`}>
                 <AdditionalExpenses
+                  initialExpenses={additionalExpenses}
                   onExpensesChange={(expenses) => {
                     setAdditionalExpenses(expenses);
                   }}
