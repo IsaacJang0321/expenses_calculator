@@ -100,21 +100,6 @@ npm run build
 npm start
 ```
 
-## 🌐 배포
-
-### Vercel 배포 (권장)
-
-1. [Vercel](https://vercel.com)에 로그인
-2. "Add New Project" 클릭
-3. GitHub 저장소 연결
-4. 환경 변수 설정:
-   - `NAVER_CLIENT_ID`
-   - `NAVER_CLIENT_SECRET`
-   - `OPINET_API_KEY`
-5. "Deploy" 클릭
-
-자세한 배포 가이드는 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참고하세요.
-
 ## 📖 사용 방법
 
 ### 경비 계산하기
