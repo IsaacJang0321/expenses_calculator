@@ -8,6 +8,7 @@ import AdditionalExpenses from "./components/AdditionalExpenses";
 import MemoSection from "./components/MemoSection";
 import CostSummary from "./components/CostSummary";
 import ExpenseList from "./components/ExpenseList";
+import ConfirmModal from "./components/ConfirmModal";
 import {
   calculateTotalCost,
   RouteInfo,
@@ -93,6 +94,7 @@ export default function Home() {
   const [calculatorKey, setCalculatorKey] = useState(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isScrolledDown, setIsScrolledDown] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // RouteSelector states
   const [routeUseNaverMap, setRouteUseNaverMap] = useState(true);
@@ -209,11 +211,10 @@ export default function Home() {
     tripDate
   );
 
-  const handleAddClick = () => {
-    setShowCalculator(true);
+  const resetCalculatorForm = () => {
     setEditingItemId(null);
     setCalculatorKey(prev => prev + 1); // Force remount by changing key
-    // Reset form when adding new
+    // Reset form
     setSelectedRoute(null);
     setVehicle(null);
     setAdditionalExpenses({
@@ -244,6 +245,17 @@ export default function Home() {
     setVehicleBrand("");
     setVehicleModel("");
     setVehicleSelectedVariantIndex(0);
+  };
+
+  const handleAddClick = () => {
+    setShowCalculator(true);
+    resetCalculatorForm();
+  };
+
+  const handleCancelConfirm = () => {
+    setShowCalculator(false);
+    resetCalculatorForm();
+    setShowCancelConfirm(false);
   };
 
   const handleItemClick = (item: ExpenseItem) => {
@@ -470,13 +482,48 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-[#1f1f1f] py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            {formatBilingualText("경비 계산기 (Trip Expenses Calculator)")}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="mb-8 relative">
+          {/* Title - always centered */}
+          <div className="text-center mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+              {formatBilingualText("경비 계산기 (Trip Expenses Calculator)")}
+            </h1>
+          </div>
+          <p className="text-center text-gray-600 dark:text-gray-400">
             {formatBilingualText("경로와 차량 정보로 출장비를 계산하세요 (Calculate trip expenses with route and vehicle information)")}
           </p>
+          
+          {/* Back button - positioned to align with calculator content */}
+          {showCalculator && (
+            <div className={`flex transition-all duration-500 ease-in-out ${showCalculator ? "gap-6" : "justify-center"}`}>
+              <div className="flex-1">
+                <div className="max-w-2xl mx-auto relative">
+                  <button
+                    onClick={() => setShowCancelConfirm(true)}
+                    className="absolute left-0 flex items-center justify-center w-10 h-10 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#2d2d2d] transition-colors"
+                    aria-label={formatBilingualText("뒤로가기 (Back)")}
+                    style={{ top: '-2.5rem' }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="w-80 flex-shrink-0"></div>
+            </div>
+          )}
         </div>
 
         <div className={`flex transition-all duration-500 ease-in-out ${showCalculator ? "gap-6" : "justify-center"}`}>
@@ -488,7 +535,9 @@ export default function Home() {
                 : "w-0 opacity-0 max-h-0 pointer-events-none"
             }`}
           >
+            
             <div key={`calculator-${calculatorKey}`} className={`space-y-6 transition-opacity duration-500 ${showCalculator ? "opacity-100" : "opacity-0"}`}>
+
           {/* Date Selector - Always visible */}
           <div>
             <DateSelector date={tripDate} onDateChange={setTripDate} />
@@ -780,6 +829,17 @@ export default function Home() {
           )}
         </button>
       )}
+
+      {/* Cancel confirmation modal */}
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelConfirm}
+        title={formatBilingualText("확인 (Confirmation)")}
+        message={formatBilingualText("계산을 중단하시겠습니까? (Cancel calculation?)")}
+        confirmText={formatBilingualText("중단 (Cancel)")}
+        cancelText={formatBilingualText("계속 (Continue)")}
+      />
     </main>
   );
 }
