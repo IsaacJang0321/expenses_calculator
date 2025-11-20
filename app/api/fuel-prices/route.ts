@@ -5,7 +5,7 @@ function parseXML(xmlText: string): { [key: string]: any }[] {
   const oils: { [key: string]: any }[] = [];
   
   // <OIL> 태그들을 찾아서 파싱
-  const oilRegex = /<OIL>(.*?)<\/OIL>/gs;
+  const oilRegex = /<OIL>([\s\S]*?)<\/OIL>/g;
   let match;
   
   while ((match = oilRegex.exec(xmlText)) !== null) {
@@ -15,7 +15,7 @@ function parseXML(xmlText: string): { [key: string]: any }[] {
     // 각 필드 추출
     const fields = ['TRADE_DT', 'PRODCD', 'PRODNM', 'PRICE', 'DIFF'];
     fields.forEach(field => {
-      const fieldRegex = new RegExp(`<${field}>(.*?)<\/${field}>`, 's');
+      const fieldRegex = new RegExp(`<${field}>([\\s\\S]*?)<\/${field}>`);
       const fieldMatch = fieldRegex.exec(oilContent);
       if (fieldMatch) {
         oil[field] = fieldMatch[1].trim();
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     
     // 에러 체크
     if (xmlText.includes("<ERROR>")) {
-      const errorMatch = xmlText.match(/<ERROR>(.*?)<\/ERROR>/s);
+      const errorMatch = xmlText.match(/<ERROR>([\s\S]*?)<\/ERROR>/);
       const errorMsg = errorMatch ? errorMatch[1].trim() : "Unknown error";
       throw new Error(`OPINET API error: ${errorMsg}`);
     }
