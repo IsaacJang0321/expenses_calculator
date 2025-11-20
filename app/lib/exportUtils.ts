@@ -518,104 +518,156 @@ export async function exportToPDF(
   filename: string = "expenses"
 ) {
   try {
-    const doc = new jsPDF("landscape", "mm", "a4");
-
-    // Check if rows is empty
-    if (rows.length === 0 || !rows[0]) {
-      throw new Error("No data to export");
+    // Use same page calculation as PNG
+    const A4_WIDTH_MM = 210; // A4 width in mm
+    const A4_HEIGHT_MM = 297; // A4 height in mm
+    const PADDING_MM = 14; // ~40px in mm
+    const HEADER_HEIGHT_MM = 40; // Title + header section in mm
+    const FOOTER_HEIGHT_MM = 15; // Total text in mm
+    const ROW_HEIGHT_MM = 8; // Approximate height per table row in mm
+    const TABLE_HEADER_HEIGHT_MM = 10;
+    const BOTTOM_MARGIN_MM = 30; // Extra space at bottom
+    
+    const headers = Object.keys(rows[0] || {});
+    const availableHeight = A4_HEIGHT_MM - HEADER_HEIGHT_MM - FOOTER_HEIGHT_MM - TABLE_HEADER_HEIGHT_MM - (PADDING_MM * 2) - BOTTOM_MARGIN_MM;
+    const rowsPerPage = Math.max(1, Math.floor(availableHeight / ROW_HEIGHT_MM) - 3);
+    const OVERLAP_ROWS = 2;
+    
+    // Calculate number of pages needed (same logic as PNG)
+    let totalPages = 1;
+    if (rows.length > rowsPerPage) {
+      const remainingRows = rows.length - rowsPerPage;
+      totalPages = 1 + Math.ceil(remainingRows / (rowsPerPage - OVERLAP_ROWS));
     }
 
     // Add Korean font if available
     let koreanFontLoaded = false;
+    const doc = new jsPDF("portrait", "mm", "a4");
+    
     if (koreanFontBase64 && koreanFontBase64.length > 0) {
       try {
-        // Add font to VFS
         doc.addFileToVFS("NanumGothic.ttf", koreanFontBase64);
-        
-        // Register the font
         doc.addFont("NanumGothic.ttf", "NanumGothic", "normal");
-        
-        // Verify font was added
         const fonts = (doc as any).getFontList();
         if (fonts && fonts["NanumGothic"]) {
           koreanFontLoaded = true;
           doc.setFont("NanumGothic", "normal");
-          console.log("Korean font (NanumGothic) loaded successfully");
-        } else {
-          console.warn("Korean font registered but not found in font list");
         }
       } catch (fontError) {
         console.error("Failed to add Korean font:", fontError);
-        // Continue without Korean font
       }
-    } else {
-      console.warn("Korean font base64 data is empty");
     }
 
-    // Prepare table data
-    const headers = Object.keys(rows[0]);
-    const tableData = rows.map((row) =>
-      headers.map((header) => {
-        const value = row[header as keyof ExportRow];
-        return value !== null && value !== undefined ? String(value) : "";
-      })
-    );
+    // Create pages (same logic as PNG)
+    for (let i = 0; i < totalPages; i++) {
+      if (i > 0) {
+        doc.addPage();
+      }
 
-    // Add table using autoTable (v5+ requires direct function call)
-    // autoTable has built-in Unicode support, but Korean fonts need to be added manually
-    autoTable(doc, {
-      head: [headers],
-      body: tableData,
-      startY: 20,
-      styles: { 
-        fontSize: 8, 
-        cellPadding: 2,
-        textColor: [0, 0, 0], // 검은색 텍스트
-        halign: "left",
-        valign: "middle",
-        font: koreanFontLoaded ? "NanumGothic" : "helvetica",
-        fontStyle: "normal",
-      },
-      headStyles: { 
-        fillColor: [243, 244, 246],
-        textColor: [0, 0, 0], // 검은색 텍스트
-        halign: "left",
-        valign: "middle",
-        font: koreanFontLoaded ? "NanumGothic" : "helvetica",
-        fontStyle: "normal",
-      },
-      alternateRowStyles: { 
-        fillColor: [249, 250, 251],
-        textColor: [0, 0, 0], // 검은색 텍스트
-        font: koreanFontLoaded ? "NanumGothic" : "helvetica",
-        fontStyle: "normal",
-      },
-      margin: { top: 20 },
-    });
+      let startIdx: number;
+      let endIdx: number;
+      
+      if (i === 0) {
+        startIdx = 0;
+        if (totalPages === 1) {
+          endIdx = Math.min(rowsPerPage - 5, rows.length);
+        } else {
+          endIdx = Math.min(rowsPerPage - OVERLAP_ROWS, rows.length);
+        }
+      } else {
+        const prevPageStart = i === 1 ? 0 : (i - 1) * (rowsPerPage - OVERLAP_ROWS);
+        const prevPageEnd = prevPageStart + (rowsPerPage - OVERLAP_ROWS);
+        startIdx = prevPageEnd;
+        
+        if (i < totalPages - 1) {
+          endIdx = Math.min(startIdx + rowsPerPage - OVERLAP_ROWS, rows.length);
+        } else {
+          const maxRowsForLastPage = rowsPerPage - 5;
+          endIdx = Math.min(startIdx + maxRowsForLastPage, rows.length);
+          const remainingRows = rows.length - startIdx;
+          if (remainingRows <= maxRowsForLastPage) {
+            endIdx = rows.length;
+          }
+        }
+      }
+      
+      const pageRows = rows.slice(startIdx, endIdx);
+      const isLastPage = i === totalPages - 1;
 
-    // Get final Y position
-    const finalY = (doc as any).lastAutoTable?.finalY || 20;
+      // Title
+      doc.setFontSize(18);
+      doc.text("경비 지출내역서", A4_WIDTH_MM / 2, 20, { align: "center" });
 
-    // Add summary using autoTable for better Korean support
-    autoTable(doc, {
-      startY: finalY + 10,
-      body: [
-        [`작성자: ${summary.author}`],
-        [`작성일자: ${summary.createdDate}`],
-        [`기간: ${summary.startDate} ~ ${summary.endDate}`],
-        [`총 항목 수: ${summary.totalItems}`],
-        [`총액: ₩${summary.totalAmount.toLocaleString()}`],
-      ],
-      styles: {
-        fontSize: 10,
-        textColor: [0, 0, 0],
-        cellPadding: 3,
-        font: koreanFontLoaded ? "NanumGothic" : "helvetica",
-        fontStyle: "normal",
-      },
-      theme: "plain",
-      margin: { left: 14 },
-    });
+      // Header section
+      doc.setFontSize(10);
+      doc.text(`기간: ${summary.startDate} ~ ${summary.endDate}`, PADDING_MM, 30);
+      doc.text(`작성자: ${summary.author}`, A4_WIDTH_MM - PADDING_MM, 30, { align: "right" });
+      doc.text(`작성일자: ${summary.createdDate}`, A4_WIDTH_MM - PADDING_MM, 35, { align: "right" });
+
+      // Prepare table data
+      const tableData = pageRows.map((row) =>
+        headers.map((header) => {
+          const value = row[header as keyof ExportRow];
+          return value !== null && value !== undefined ? String(value) : "";
+        })
+      );
+
+      // Add table
+      autoTable(doc, {
+        head: [headers],
+        body: tableData,
+        startY: 45,
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 2,
+          textColor: [0, 0, 0],
+          halign: "center",
+          valign: "middle",
+          font: koreanFontLoaded ? "NanumGothic" : "helvetica",
+          fontStyle: "normal",
+        },
+        headStyles: { 
+          fillColor: [243, 244, 246],
+          textColor: [0, 0, 0],
+          halign: "center",
+          valign: "middle",
+          font: koreanFontLoaded ? "NanumGothic" : "helvetica",
+          fontStyle: "normal",
+        },
+        margin: { left: PADDING_MM, right: PADDING_MM },
+      });
+
+      // Add total text at bottom right (only on last page)
+      if (isLastPage) {
+        // Set font and size
+        if (koreanFontLoaded) {
+          doc.setFont("NanumGothic", "normal");
+        } else {
+          doc.setFont("helvetica", "normal");
+        }
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        const totalText = `합계: ₩${summary.totalAmount.toLocaleString()}`;
+        // Use right edge of page minus padding for right alignment
+        doc.text(
+          totalText,
+          A4_WIDTH_MM - PADDING_MM,
+          A4_HEIGHT_MM - PADDING_MM,
+          { align: "right" }
+        );
+      }
+
+      // Page number
+      if (totalPages > 1) {
+        doc.setFontSize(10);
+        doc.setFont(koreanFontLoaded ? "NanumGothic" : "helvetica", "normal");
+        doc.text(
+          `${i + 1} / ${totalPages}`,
+          PADDING_MM,
+          A4_HEIGHT_MM - PADDING_MM
+        );
+      }
+    }
 
     // Save PDF
     doc.save(`${filename}.pdf`);
