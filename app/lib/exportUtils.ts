@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import JSZip from "jszip";
 import { ExpenseItem } from "../page";
 import { koreanFontBase64 } from "./koreanFont";
 
@@ -231,99 +232,276 @@ export async function exportToPNG(
   summary: { author: string; createdDate: string; startDate: string; endDate: string; totalItems: number; totalAmount: number },
   filename: string = "expenses"
 ) {
-  // Create a temporary table element
-  const table = document.createElement("table");
-  table.style.borderCollapse = "collapse";
-  table.style.width = "100%";
-  table.style.fontFamily = "Arial, sans-serif";
-  table.style.fontSize = "12px";
-
-  // Create header row
-  const headerRow = document.createElement("tr");
-  headerRow.style.backgroundColor = "#f3f4f6";
-  headerRow.style.fontWeight = "bold";
+  // A4 size in pixels at 96 DPI: 794px x 1123px (210mm x 297mm)
+  const A4_WIDTH = 794; // pixels at 96 DPI
+  const A4_HEIGHT = 1123; // pixels at 96 DPI
+  const SCALE = 2; // For better quality
+  const PADDING = 40;
+  const HEADER_HEIGHT = 150; // Title + header section
+  const FOOTER_HEIGHT = 50; // Total text
+  const ROW_HEIGHT = 35; // Approximate height per table row
+  const TABLE_HEADER_HEIGHT = 40;
   
   const headers = Object.keys(rows[0] || {});
-  headers.forEach((header) => {
-    const th = document.createElement("th");
-    th.textContent = header;
-    th.style.border = "1px solid #d1d5db";
-    th.style.padding = "8px";
-    th.style.textAlign = "left";
-    th.style.color = "#000000"; // 검은색 텍스트
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
+  // Add extra margin at bottom (about 4-5 rows worth of space for sum and page number)
+  const BOTTOM_MARGIN = 150; // Extra space at bottom (increased for sum and page number)
+  const availableHeight = A4_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - TABLE_HEADER_HEIGHT - (PADDING * 2) - BOTTOM_MARGIN;
+  // Use more conservative calculation: subtract 3 more rows for safety
+  const rowsPerPage = Math.max(1, Math.floor(availableHeight / ROW_HEIGHT) - 3);
+  const OVERLAP_ROWS = 2; // Number of rows to overlap between pages
+  
+  // Calculate number of pages needed
+  // Each page after the first adds (rowsPerPage - OVERLAP_ROWS) new rows
+  let totalPages = 1;
+  if (rows.length > rowsPerPage) {
+    const remainingRows = rows.length - rowsPerPage;
+    totalPages = 1 + Math.ceil(remainingRows / (rowsPerPage - OVERLAP_ROWS));
+  }
+  
+  // Helper function to create a page
+  const createPage = (pageRows: ExportRow[], pageNumber: number, isLastPage: boolean) => {
+    const pageContainer = document.createElement("div");
+    pageContainer.style.width = `${A4_WIDTH}px`;
+    pageContainer.style.height = `${A4_HEIGHT}px`;
+    pageContainer.style.padding = `${PADDING}px`;
+    pageContainer.style.backgroundColor = "white";
+    pageContainer.style.fontFamily = "Arial, sans-serif";
+    pageContainer.style.boxSizing = "border-box";
+    pageContainer.style.position = "relative";
 
-  // Create data rows
-  rows.forEach((row, index) => {
-    const tr = document.createElement("tr");
-    // Alternate row colors for better readability
-    if (index % 2 === 0) {
-      tr.style.backgroundColor = "#ffffff";
-    } else {
-      tr.style.backgroundColor = "#f9fafb";
-    }
+    // Title
+    const title = document.createElement("h1");
+    title.textContent = "경비 지출내역서";
+    title.style.textAlign = "center";
+    title.style.fontSize = "24px";
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "20px";
+    title.style.color = "#000000";
+    pageContainer.appendChild(title);
+
+    // Header section
+    const headerDiv = document.createElement("div");
+    headerDiv.style.display = "flex";
+    headerDiv.style.justifyContent = "space-between";
+    headerDiv.style.marginBottom = "20px";
+    headerDiv.style.fontSize = "14px";
+    
+    const periodDiv = document.createElement("div");
+    periodDiv.innerHTML = `<strong>기간:</strong> ${summary.startDate} ~ ${summary.endDate}`;
+    periodDiv.style.color = "#000000";
+    
+    const authorDiv = document.createElement("div");
+    authorDiv.innerHTML = `<strong>작성자:</strong> ${summary.author}<br><strong>작성일자:</strong> ${summary.createdDate}`;
+    authorDiv.style.textAlign = "right";
+    authorDiv.style.color = "#000000";
+    
+    headerDiv.appendChild(periodDiv);
+    headerDiv.appendChild(authorDiv);
+    pageContainer.appendChild(headerDiv);
+
+    // Create table
+    const table = document.createElement("table");
+    table.style.borderCollapse = "collapse";
+    table.style.width = "100%";
+    table.style.fontSize = "11px";
+    table.style.border = "1px solid #000000";
+    table.style.marginBottom = "0px";
+
+    // Create header row
+    const headerRow = document.createElement("tr");
+    headerRow.style.backgroundColor = "#f3f4f6";
+    headerRow.style.fontWeight = "bold";
+    
     headers.forEach((header) => {
-      const td = document.createElement("td");
-      td.textContent = row[header as keyof ExportRow] || "";
-      td.style.border = "1px solid #d1d5db";
-      td.style.padding = "8px";
-      td.style.color = "#000000"; // 검은색 텍스트
-      tr.appendChild(td);
+      const th = document.createElement("th");
+      th.textContent = header;
+      th.style.border = "1px solid #000000";
+      th.style.padding = "8px";
+      th.style.textAlign = "center";
+      th.style.color = "#000000";
+      headerRow.appendChild(th);
     });
-    table.appendChild(tr);
-  });
+    table.appendChild(headerRow);
 
-  // Create summary section
-  const summaryDiv = document.createElement("div");
-  summaryDiv.style.marginTop = "20px";
-  summaryDiv.style.fontSize = "12px";
-  summaryDiv.style.color = "#000000"; // 검은색 텍스트
-  summaryDiv.innerHTML = `
-    <div style="color: #000000;"><strong style="color: #000000;">작성자:</strong> <span style="color: #000000;">${summary.author}</span></div>
-    <div style="color: #000000;"><strong style="color: #000000;">작성일자:</strong> <span style="color: #000000;">${summary.createdDate}</span></div>
-    <div style="color: #000000;"><strong style="color: #000000;">기간:</strong> <span style="color: #000000;">${summary.startDate} ~ ${summary.endDate}</span></div>
-    <div style="color: #000000;"><strong style="color: #000000;">총 항목 수:</strong> <span style="color: #000000;">${summary.totalItems}</span></div>
-    <div style="color: #000000;"><strong style="color: #000000;">총액:</strong> <span style="color: #000000;">₩${summary.totalAmount.toLocaleString()}</span></div>
-  `;
+    // Create data rows
+    pageRows.forEach((row) => {
+      const tr = document.createElement("tr");
+      headers.forEach((header) => {
+        const td = document.createElement("td");
+        td.textContent = row[header as keyof ExportRow] || "";
+        td.style.border = "1px solid #d1d5db";
+        td.style.padding = "6px";
+        td.style.color = "#000000";
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
 
-  // Create container
-  const container = document.createElement("div");
-  container.style.padding = "20px";
-  container.style.backgroundColor = "white";
-  container.appendChild(table);
-  container.appendChild(summaryDiv);
+    pageContainer.appendChild(table);
 
-  // Append to body temporarily
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
-  document.body.appendChild(container);
+    // Add total text at bottom right (only on last page)
+    if (isLastPage) {
+      const totalDiv = document.createElement("div");
+      totalDiv.style.textAlign = "right";
+      totalDiv.style.position = "absolute";
+      totalDiv.style.bottom = `${PADDING}px`;
+      totalDiv.style.right = `${PADDING}px`;
+      totalDiv.style.fontSize = "14px";
+      totalDiv.style.fontWeight = "bold";
+      totalDiv.style.color = "#000000";
+      totalDiv.textContent = `합계: ₩${summary.totalAmount.toLocaleString()}`;
+      pageContainer.appendChild(totalDiv);
+    }
+
+    // Page number
+    if (totalPages > 1) {
+      const pageNumberDiv = document.createElement("div");
+      pageNumberDiv.style.position = "absolute";
+      pageNumberDiv.style.bottom = `${PADDING}px`;
+      pageNumberDiv.style.left = `${PADDING}px`;
+      pageNumberDiv.style.fontSize = "12px";
+      pageNumberDiv.style.color = "#000000";
+      pageNumberDiv.textContent = `${pageNumber} / ${totalPages}`;
+      pageContainer.appendChild(pageNumberDiv);
+    }
+
+    return pageContainer;
+  };
+
+  // Create all pages
+  // No overlap between pages - each page has independent rows
+  const allPages: HTMLDivElement[] = [];
+  
+  for (let i = 0; i < totalPages; i++) {
+    let startIdx: number;
+    let endIdx: number;
+    
+    if (i === 0) {
+      // First page: start from 0
+      startIdx = 0;
+      // Exclude last 2 rows if not last page, or reserve space for footer if last page
+      if (totalPages === 1) {
+        // Only one page: reserve space for footer
+        endIdx = Math.min(rowsPerPage - 5, rows.length);
+      } else {
+        // Multiple pages: exclude last 2 rows
+        endIdx = Math.min(rowsPerPage - OVERLAP_ROWS, rows.length);
+      }
+    } else {
+      // Subsequent pages: start where previous page ended (no overlap)
+      const prevPageStart = i === 1 ? 0 : (i - 1) * (rowsPerPage - OVERLAP_ROWS);
+      const prevPageEnd = prevPageStart + (rowsPerPage - OVERLAP_ROWS);
+      startIdx = prevPageEnd; // Start right after previous page ends
+      
+      if (i < totalPages - 1) {
+        // Not last page: exclude last 2 rows
+        endIdx = Math.min(startIdx + rowsPerPage - OVERLAP_ROWS, rows.length);
+      } else {
+        // Last page: reserve space for footer
+        const maxRowsForLastPage = rowsPerPage - 5; // Reserve 5 rows for footer
+        endIdx = Math.min(startIdx + maxRowsForLastPage, rows.length);
+        // But ensure we show at least the remaining rows if there aren't many left
+        const remainingRows = rows.length - startIdx;
+        if (remainingRows <= maxRowsForLastPage) {
+          endIdx = rows.length; // Show all remaining rows if they fit
+        }
+      }
+    }
+    
+    const pageRows = rows.slice(startIdx, endIdx);
+    const isLastPage = i === totalPages - 1;
+    allPages.push(createPage(pageRows, i + 1, isLastPage));
+  }
+
+  // If only one page, download directly
+  if (totalPages === 1) {
+    const pageContainer = allPages[0];
+    document.body.appendChild(pageContainer);
+    pageContainer.style.position = "absolute";
+    pageContainer.style.left = "-9999px";
+
+    try {
+      const canvas = await html2canvas(pageContainer, {
+        backgroundColor: "#ffffff",
+        scale: SCALE,
+        width: A4_WIDTH,
+        height: A4_HEIGHT,
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", `${filename}.png`);
+          link.style.visibility = "hidden";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      });
+    } finally {
+      document.body.removeChild(pageContainer);
+    }
+    return;
+  }
+
+  // Multiple pages: create individual PNGs and zip them
+  const zip = new JSZip();
+  const tempContainer = document.createElement("div");
+  tempContainer.style.position = "absolute";
+  tempContainer.style.left = "-9999px";
+  document.body.appendChild(tempContainer);
 
   try {
-    // Convert to canvas
-    const canvas = await html2canvas(container, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-    });
+    // Process each page individually
+    for (let i = 0; i < allPages.length; i++) {
+      const pageContainer = allPages[i];
+      tempContainer.appendChild(pageContainer);
 
-    // Convert canvas to blob and download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${filename}.png`);
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    });
+      // Wait a bit for rendering
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(pageContainer, {
+        backgroundColor: "#ffffff",
+        scale: SCALE,
+        width: A4_WIDTH,
+        height: A4_HEIGHT,
+      });
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          }
+        }, "image/png");
+      });
+
+      // Add to zip
+      zip.file(`${filename}_${i + 1}.png`, blob);
+
+      // Remove page from container
+      tempContainer.removeChild(pageContainer);
+    }
+
+    // Generate zip file and download
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.zip`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   } finally {
-    // Remove temporary element
-    document.body.removeChild(container);
+    // Remove temporary container
+    if (tempContainer.parentNode) {
+      document.body.removeChild(tempContainer);
+    }
   }
 }
 
