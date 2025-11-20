@@ -5,6 +5,7 @@ import { formatCurrency } from "../lib/calculations";
 import { formatBilingualText } from "../lib/textUtils";
 import { ExpenseItem } from "../page";
 import ExportModal from "./ExportModal";
+import ConfirmModal from "./ConfirmModal";
 
 interface ExpenseListProps {
   items: ExpenseItem[];
@@ -38,6 +39,9 @@ export default function ExpenseList({
   onExport,
 }: ExpenseListProps) {
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   return (
     <div className="w-full">
@@ -48,11 +52,7 @@ export default function ExpenseList({
           </h2>
           {items.length > 0 && (
             <button
-              onClick={() => {
-                if (window.confirm(formatBilingualText("전체 내역을 삭제하시겠습니까? (Delete all expenses?)"))) {
-                  onDeleteAll();
-                }
-              }}
+              onClick={() => setShowDeleteAllConfirm(true)}
               className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium transition-colors"
             >
               {formatBilingualText("내역 전체 삭제 (Delete All)")}
@@ -84,7 +84,8 @@ export default function ExpenseList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onItemDelete(item.id);
+                      setItemToDelete(item.id);
+                      setShowDeleteConfirm(true);
                     }}
                     className="ml-4 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Delete"
@@ -135,6 +136,31 @@ export default function ExpenseList({
           onExport={onExport}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={() => {
+          if (itemToDelete) {
+            onItemDelete(itemToDelete);
+          }
+        }}
+        title={formatBilingualText("삭제 확인 (Delete Confirmation)")}
+        message={formatBilingualText("이 내역을 삭제하시겠습니까? (Delete this expense?)")}
+        confirmText={formatBilingualText("삭제 (Delete)")}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteAllConfirm}
+        onClose={() => setShowDeleteAllConfirm(false)}
+        onConfirm={onDeleteAll}
+        title={formatBilingualText("전체 삭제 확인 (Delete All Confirmation)")}
+        message={formatBilingualText("전체 내역을 삭제하시겠습니까? (Delete all expenses?)")}
+        confirmText={formatBilingualText("전체 삭제 (Delete All)")}
+      />
     </div>
   );
 }
