@@ -23,33 +23,20 @@ function extractKorean(text: string): string {
 }
 
 /**
- * Returns Korean-only text if English word count is more than 1
- * Otherwise returns the original bilingual text
+ * Returns Korean-only text by removing all English text
+ * Format: "한글 (English text)" -> "한글"
  */
 export function formatBilingualText(text: string): string {
-  const englishWordCount = countEnglishWords(text);
-  
-  // If more than 1 English word, return Korean only
-  if (englishWordCount > 1) {
-    return extractKorean(text);
-  }
-  
-  return text;
+  // Always return Korean only
+  return extractKorean(text);
 }
 
 /**
- * Formats bilingual error message - removes English if more than 1 word
- * Returns Korean only if English word count > 1, otherwise returns original
+ * Formats bilingual error message - removes all English text
+ * Returns Korean only
  */
 export function formatBilingualError(text: string): string {
-  const englishWordCount = countEnglishWords(text);
-  
-  // If more than 1 English word, return Korean only
-  if (englishWordCount > 1) {
-    return extractKorean(text);
-  }
-  
-  // Otherwise return original text
-  return text;
+  // Always return Korean only
+  return extractKorean(text);
 }
 
