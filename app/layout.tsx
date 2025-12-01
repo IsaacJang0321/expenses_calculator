@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "출장 경비 계산기",
+  verification: {
+    google: "fhLAmClL1dkQoiPwgkRpQaFs9c4XoqJvPqGLAfKUDB4",
+  },
 };
 
 export default function RootLayout({
