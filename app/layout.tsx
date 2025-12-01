@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "경비 계산기",
+  title: "출장 경비 계산기",
 };
 
 export default function RootLayout({

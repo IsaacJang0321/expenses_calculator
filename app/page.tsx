@@ -486,7 +486,7 @@ export default function Home() {
           {/* Title - always centered */}
           <div className="text-center mb-2">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-              {formatBilingualText("경비 계산기 (Trip Expenses Calculator)")}
+              {formatBilingualText("출장 경비 계산기 (Trip Expenses Calculator)")}
             </h1>
           </div>
           <p className="text-center text-gray-600 dark:text-gray-400">
@@ -779,7 +779,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <small>© 2025 Isaac — 경비 계산기</small> <br />
+          <small>© 2025 Isaac — 출장 경비 계산기</small> <br />
           <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
           <div>
             <a
