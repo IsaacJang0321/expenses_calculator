@@ -79,8 +79,7 @@ export default function RootLayout({
         </ThemeProvider>
         <Script
           src="//t1.daumcdn.net/kas/static/ba.min.js"
-          strategy="lazyOnload"
-          async
+          strategy="afterInteractive"
         />
       </body>
     </html>

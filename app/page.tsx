@@ -657,6 +657,16 @@ export default function Home() {
             )}
           </div>
 
+                {/* Mobile Ad Banner - between calculator and cost summary */}
+                <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
+                  <ins 
+                    className="kakao_ad_area" 
+                    data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
+                    data-ad-width="320"
+                    data-ad-height="100"
+                  ></ins>
+                </div>
+
                 {/* Cost Summary */}
                 <div className="mt-6">
                   <CostSummary breakdown={breakdown} />
@@ -774,6 +784,15 @@ export default function Home() {
                 onDeleteAll={handleDeleteAll}
                 onExport={handleExport}
               />
+              {/* Mobile Ad Banner - below expense list */}
+              <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
+                <ins 
+                  className="kakao_ad_area" 
+                  data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
+                  data-ad-width="320"
+                  data-ad-height="100"
+                ></ins>
+              </div>
             </div>
           </div>
           )}
@@ -793,11 +812,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Kakao AdFit Advertisement - fixed position at 75% from left, aligned with calculator/expense list start */}
-      <div className="fixed left-[75%] top-[calc(2rem+2.5rem+0.5rem+1.5rem+2rem)] z-40 flex-shrink-0">
+      {/* Kakao AdFit Advertisement - fixed position at 75% from left, aligned with calculator/expense list start (Desktop only) */}
+      <div className="fixed left-[75%] top-[calc(2rem+2.5rem+0.5rem+1.5rem+2rem)] z-40 flex-shrink-0 opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto">
         <ins 
           className="kakao_ad_area" 
-          style={{ display: "none" }}
           data-ad-unit="DAN-BgQvbkqypOLiGNZu"
           data-ad-width="160"
           data-ad-height="600"
