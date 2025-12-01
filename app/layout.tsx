@@ -50,6 +50,11 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <Script
+          src="//t1.daumcdn.net/kas/static/ba.min.js"
+          strategy="lazyOnload"
+          async
+        />
       </body>
     </html>
   );

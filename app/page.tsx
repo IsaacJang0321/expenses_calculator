@@ -760,19 +760,31 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: Expense List */}
+          {/* Right: Expense List and Ad */}
           {!showCalculator && (
-          <div 
-            className="w-80 flex-shrink-0 transition-all duration-500 ease-in-out"
-          >
-            <ExpenseList
-              items={expenseList}
-              onItemClick={handleItemClick}
-              onItemDelete={handleItemDelete}
-              onAddClick={handleAddClick}
-              onDeleteAll={handleDeleteAll}
-              onExport={handleExport}
-            />
+          <div className="flex gap-4 flex-shrink-0">
+            <div 
+              className="w-80 flex-shrink-0 transition-all duration-500 ease-in-out"
+            >
+              <ExpenseList
+                items={expenseList}
+                onItemClick={handleItemClick}
+                onItemDelete={handleItemDelete}
+                onAddClick={handleAddClick}
+                onDeleteAll={handleDeleteAll}
+                onExport={handleExport}
+              />
+            </div>
+            {/* Kakao AdFit Advertisement */}
+            <div className="flex-shrink-0">
+              <ins 
+                className="kakao_ad_area" 
+                style={{ display: "none" }}
+                data-ad-unit="DAN-BgQvbkqypOLiGNZu"
+                data-ad-width="160"
+                data-ad-height="600"
+              ></ins>
+            </div>
           </div>
           )}
         </div>
