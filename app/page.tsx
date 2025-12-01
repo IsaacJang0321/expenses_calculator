@@ -791,15 +791,14 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <small>© 2025 Isaac — 출장 경비 계산기</small> <br />
-          <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
-          <div>
-            <a
-              target="_blank"
-              href="https://github.com/IsaacJang0321/expenses_calculator"
-            >
-              Click here to see the GitHub repository
-            </a>
+          <div className="max-w-3xl mx-auto mb-6 space-y-2">
+            <p>
+              이 서비스는 출장비를 쉽고 빠르게 계산할 수 있는 무료 <strong>출장 경비 계산기</strong>입니다.
+            </p>
+            <p>
+              교통비, 식비, 숙박비, 일비 등 다양한 항목을 자동으로 합산하여 <strong>출장비 정산</strong>을 간편하게 도와줍니다.
+            </p>
+            <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
           </div>
         </div>
       </div>
