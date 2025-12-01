@@ -495,9 +495,9 @@ export default function Home() {
           
           {/* Back button - positioned to align with calculator content */}
           {showCalculator && (
-            <div className={`flex transition-all duration-500 ease-in-out ${showCalculator ? "gap-6" : "justify-center"}`}>
-              <div className="flex-1">
-                <div className="max-w-2xl mx-auto relative">
+            <div className="flex transition-all duration-500 ease-in-out justify-center">
+              <div className="w-full max-w-2xl">
+                <div className="relative">
                   <button
                     onClick={() => setShowCancelConfirm(true)}
                     className="absolute left-0 flex items-center justify-center w-10 h-10 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#2d2d2d] transition-colors"
@@ -521,7 +521,6 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-              <div className="w-80 flex-shrink-0"></div>
             </div>
           )}
         </div>
@@ -531,10 +530,11 @@ export default function Home() {
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${
               showCalculator
-                ? "flex-1 opacity-100 max-h-none"
+                ? "flex-1 flex justify-center opacity-100 max-h-none"
                 : "w-0 opacity-0 max-h-0 pointer-events-none"
             }`}
           >
+            <div className={`w-full max-w-2xl ${showCalculator ? "" : "hidden"}`}>
             
             <div key={`calculator-${calculatorKey}`} className={`space-y-6 transition-opacity duration-500 ${showCalculator ? "opacity-100" : "opacity-0"}`}>
 
@@ -757,9 +757,11 @@ export default function Home() {
                   </button>
                 </div>
             </div>
+            </div>
           </div>
 
           {/* Right: Expense List */}
+          {!showCalculator && (
           <div 
             className="w-80 flex-shrink-0 transition-all duration-500 ease-in-out"
           >
@@ -772,6 +774,7 @@ export default function Home() {
               onExport={handleExport}
             />
           </div>
+          )}
         </div>
 
         {/* Footer */}
