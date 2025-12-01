@@ -525,7 +525,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className={`flex transition-all duration-500 ease-in-out ${showCalculator ? "gap-6" : "justify-center"}`}>
+        <div className={`flex transition-all duration-500 ease-in-out ${showCalculator ? "gap-6" : ""}`}>
           {/* Left: Calculator */}
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${
@@ -760,9 +760,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: Expense List and Ad */}
+          {/* Right: Expense List */}
           {!showCalculator && (
-          <div className="flex gap-4 flex-shrink-0">
+          <div className="flex-1 flex justify-center items-start">
             <div 
               className="w-80 flex-shrink-0 transition-all duration-500 ease-in-out"
             >
@@ -774,16 +774,6 @@ export default function Home() {
                 onDeleteAll={handleDeleteAll}
                 onExport={handleExport}
               />
-            </div>
-            {/* Kakao AdFit Advertisement */}
-            <div className="flex-shrink-0">
-              <ins 
-                className="kakao_ad_area" 
-                style={{ display: "none" }}
-                data-ad-unit="DAN-BgQvbkqypOLiGNZu"
-                data-ad-width="160"
-                data-ad-height="600"
-              ></ins>
             </div>
           </div>
           )}
@@ -801,6 +791,17 @@ export default function Home() {
             <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
           </div>
         </div>
+      </div>
+
+      {/* Kakao AdFit Advertisement - fixed position at 75% from left, aligned with calculator/expense list start */}
+      <div className="fixed left-[75%] top-[calc(2rem+2.5rem+0.5rem+1.5rem+2rem)] z-40 flex-shrink-0">
+        <ins 
+          className="kakao_ad_area" 
+          style={{ display: "none" }}
+          data-ad-unit="DAN-BgQvbkqypOLiGNZu"
+          data-ad-width="160"
+          data-ad-height="600"
+        ></ins>
       </div>
 
       {/* Scroll to top/bottom button */}
