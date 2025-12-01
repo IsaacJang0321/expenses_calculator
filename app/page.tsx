@@ -142,6 +142,176 @@ export default function Home() {
     }
   }, []);
 
+  // Initialize Kakao AdFit ads after script loads
+  useEffect(() => {
+    const initAds = () => {
+      if (typeof window === 'undefined') return;
+      
+      // Check if Kakao AdFit script is loaded
+      const kas = (window as any).kas;
+      const scriptElement = document.getElementById('kakao-adfit-script');
+      const isScriptLoaded = scriptElement && scriptElement.getAttribute('data-loaded') === 'true';
+      
+      if (kas || isScriptLoaded) {
+        console.log('Kakao AdFit script loaded, initializing ads...');
+        
+        // Wait a bit for DOM to be ready
+        setTimeout(() => {
+          const adElements = document.querySelectorAll('.kakao_ad_area');
+          console.log(`Found ${adElements.length} ad elements`);
+          
+          adElements.forEach((el, index) => {
+            const adUnit = el.getAttribute('data-ad-unit');
+            const adId = el.id || `ad-${index}`;
+            console.log(`Ad element ${index + 1} (${adId}): ${adUnit}`);
+            
+            // Check if ad is visible
+            const rect = el.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(el);
+            const isVisible = rect.width > 0 && rect.height > 0 && 
+                             computedStyle.display !== 'none' && 
+                             computedStyle.visibility !== 'hidden' &&
+                             computedStyle.opacity !== '0';
+            console.log(`Ad ${index + 1} visible: ${isVisible}, size: ${rect.width}x${rect.height}, display: ${computedStyle.display}, opacity: ${computedStyle.opacity}`);
+            
+            // Only initialize visible ads
+            if (isVisible) {
+              // Force re-initialization by removing and re-adding
+              const parent = el.parentElement;
+              if (parent) {
+                const clone = el.cloneNode(true) as HTMLElement;
+                parent.replaceChild(clone, el);
+                console.log(`Re-initialized ad ${index + 1} (${adId})`);
+              }
+            } else {
+              console.log(`Skipping ad ${index + 1} (${adId}) - not visible`);
+            }
+          });
+        }, 1000);
+      } else {
+        console.log('Kakao AdFit script not loaded yet, retrying...');
+        setTimeout(initAds, 500);
+      }
+    };
+
+    // Check script load status
+    const checkScriptLoad = () => {
+      const scriptElement = document.getElementById('kakao-adfit-script');
+      if (scriptElement && (window as any).kas) {
+        scriptElement.setAttribute('data-loaded', 'true');
+        initAds();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      // Check if script is already loaded
+      checkScriptLoad();
+      
+      // Listen for window load
+      window.addEventListener('load', () => {
+        checkScriptLoad();
+        setTimeout(initAds, 1000);
+      });
+      
+      // Also try periodically
+      const intervalId = setInterval(() => {
+        if ((window as any).kas) {
+          clearInterval(intervalId);
+          checkScriptLoad();
+        }
+      }, 500);
+
+      // Cleanup
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, []);
+
+  // Re-initialize ads when calculator visibility changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const kas = (window as any).kas;
+    if (!kas) {
+      // If script not loaded, wait and retry
+      const retryTimeout = setTimeout(() => {
+        const kasRetry = (window as any).kas;
+        if (kasRetry) {
+          // Retry initialization
+          const event = new Event('retry-ad-init');
+          window.dispatchEvent(event);
+        }
+      }, 1000);
+      return () => clearTimeout(retryTimeout);
+    }
+
+    const initAd = (adId: string, delay: number = 800) => {
+      setTimeout(() => {
+        const adElement = document.getElementById(adId);
+        if (adElement) {
+          // 요소가 실제로 화면에 보이는지 확인
+          const rect = adElement.getBoundingClientRect();
+          const computedStyle = window.getComputedStyle(adElement);
+          const isVisible = rect.width > 0 && rect.height > 0 && 
+                           computedStyle.display !== 'none' && 
+                           computedStyle.visibility !== 'hidden' &&
+                           computedStyle.opacity !== '0';
+          
+          // For expense list ad, check parent visibility instead
+          const parentElement = adElement.parentElement;
+          const parentVisible = parentElement ? 
+            window.getComputedStyle(parentElement).display !== 'none' &&
+            window.getComputedStyle(parentElement).opacity !== '0' : true;
+          
+          if (isVisible && parentVisible) {
+            console.log(`Re-initializing ${adId}... (visible: ${rect.width}x${rect.height})`);
+            const parent = adElement.parentElement;
+            if (parent) {
+              const clone = adElement.cloneNode(true) as HTMLElement;
+              parent.replaceChild(clone, adElement);
+              
+              // Force kas to recognize the new ad element
+              setTimeout(() => {
+                // Also try to trigger kas refresh if available
+                if (kas && typeof kas.refresh === 'function') {
+                  try {
+                    kas.refresh();
+                  } catch (e) {
+                    console.log('kas.refresh not available');
+                  }
+                }
+                // Try to manually trigger ad loading
+                const newAdElement = document.getElementById(adId);
+                if (newAdElement && (window as any).kas) {
+                  // Force kas to scan for new ads
+                  const event = new Event('DOMContentLoaded');
+                  window.dispatchEvent(event);
+                }
+              }, 500);
+            }
+          } else {
+            console.log(`${adId} is not visible, skipping initialization (display: ${computedStyle.display}, opacity: ${computedStyle.opacity}, parentVisible: ${parentVisible})`);
+            // If not visible but it's main ad, retry
+            if (adId === 'kakao-ad-main') {
+              setTimeout(() => initAd(adId, 0), 1000);
+            }
+          }
+        } else {
+          console.log(`${adId} element not found in DOM`);
+        }
+      }, delay);
+    };
+
+    // Always initialize main ad (below subtitle)
+    initAd('kakao-ad-main', 800);
+    
+    // Retry after DOM fully updates
+    setTimeout(() => {
+      initAd('kakao-ad-main', 0);
+    }, 1500);
+  }, [showCalculator]);
+
   // Save vehicle preference to cache
   useEffect(() => {
     if (vehicle) {
@@ -657,15 +827,6 @@ export default function Home() {
             )}
           </div>
 
-                {/* Mobile Ad Banner - between calculator and cost summary */}
-                <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
-                  <ins 
-                    className="kakao_ad_area" 
-                    data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
-                    data-ad-width="320"
-                    data-ad-height="100"
-                  ></ins>
-                </div>
 
                 {/* Cost Summary */}
                 <div className="mt-6">
@@ -784,15 +945,6 @@ export default function Home() {
                 onDeleteAll={handleDeleteAll}
                 onExport={handleExport}
               />
-              {/* Mobile Ad Banner - below expense list */}
-              <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
-                <ins 
-                  className="kakao_ad_area" 
-                  data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
-                  data-ad-width="320"
-                  data-ad-height="100"
-                ></ins>
-              </div>
             </div>
           </div>
           )}
@@ -809,6 +961,17 @@ export default function Home() {
             </p>
             <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
           </div>
+        </div>
+
+        {/* Mobile Ad Banner - below footer */}
+        <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
+          <ins 
+            id="kakao-ad-main"
+            className="kakao_ad_area" 
+            data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
+            data-ad-width="320"
+            data-ad-height="100"
+          ></ins>
         </div>
       </div>
 

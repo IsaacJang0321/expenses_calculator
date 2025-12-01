@@ -78,6 +78,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <Script
+          id="kakao-adfit-script"
           src="//t1.daumcdn.net/kas/static/ba.min.js"
           strategy="afterInteractive"
         />
