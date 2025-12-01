@@ -650,8 +650,8 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-white dark:bg-[#1f1f1f] py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-white dark:bg-[#1f1f1f] py-8 px-4 flex flex-col">
+      <div className="max-w-7xl mx-auto flex-1 flex flex-col">
         <div className="mb-8 relative">
           {/* Title - always centered */}
           <div className="text-center mb-2">
@@ -950,28 +950,31 @@ export default function Home() {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <div className="max-w-3xl mx-auto mb-6 space-y-2">
-            <p>
-              이 서비스는 출장비를 쉽고 빠르게 계산할 수 있는 무료 <strong>출장 경비 계산기</strong>입니다.
-            </p>
-            <p>
-              교통비, 식비, 숙박비, 일비 등 다양한 항목을 자동으로 합산하여 <strong>출장비 정산</strong>을 간편하게 도와줍니다.
-            </p>
-            <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
+        {/* Footer and Ad - pushed to bottom */}
+        <div className="mt-auto">
+          {/* Footer */}
+          <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="max-w-3xl mx-auto mb-6 space-y-2">
+              <p>
+                이 서비스는 출장비를 쉽고 빠르게 계산할 수 있는 무료 <strong>출장 경비 계산기</strong>입니다.
+              </p>
+              <p>
+                교통비, 식비, 숙박비, 일비 등 다양한 항목을 자동으로 합산하여 <strong>출장비 정산</strong>을 간편하게 도와줍니다.
+              </p>
+              <small>본 서비스는 어떠한 개인정보도 수집하지 않습니다.</small>
+            </div>
           </div>
-        </div>
 
-        {/* Mobile Ad Banner - below footer */}
-        <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
-          <ins 
-            id="kakao-ad-main"
-            className="kakao_ad_area" 
-            data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
-            data-ad-width="320"
-            data-ad-height="100"
-          ></ins>
+          {/* Mobile Ad Banner - below footer */}
+          <div className="mt-6 flex justify-center" style={{ minHeight: '100px' }}>
+            <ins 
+              id="kakao-ad-main"
+              className="kakao_ad_area" 
+              data-ad-unit="DAN-lDFTdJU8A7ESFd0a"
+              data-ad-width="320"
+              data-ad-height="100"
+            ></ins>
+          </div>
         </div>
       </div>
 
